@@ -16,7 +16,7 @@ contract DepositHandler {
 
     // Allow users to deposit USDC
     function deposit(uint256 amount) external {
-        require(amount >= 249990000 && amount <= 250010000, "Deposit must be 250USDC"); //we can change this if the deposit is different for different bootcamps
+        require(amount >= 249e18 && amount <= 251e18, "Deposit must be 250USDC"); //we can change this if the deposit is different for different bootcamps
         require(usdcToken.transferFrom(msg.sender, address(this), amount), "Transfer failed");
         deposits[msg.sender] += amount;
     }
