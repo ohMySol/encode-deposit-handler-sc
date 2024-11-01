@@ -32,18 +32,22 @@ contract DepositHandlerTest is Test {
 
     function testDeposit() public {
     uint256 depositAmount = 250e18; // 250 USDC in token decimals
-    usdcToken.transfer(user, depositAmount); //mint mock USDC to user
+    usdcToken.transfer(user, depositAmount); // Mint mock USDC to user
 
-    
-    vm.startPrank(user); //start simulating actions from the user's perspective
-    usdcToken.approve(address(depositHandler), depositAmount); // approve the contract to spend the user's USDC
-    depositHandler.deposit(depositAmount); //call the deposit function
+    // Start simulating actions from the user's perspective
+    vm.startPrank(user); 
+    usdcToken.approve(address(depositHandler), depositAmount); // Approve the contract to spend the user's USDC
+    depositHandler.deposit(depositAmount); // Call the deposit function
 
-    
-    assertEq(depositHandler.deposits(user), depositAmount, "User deposit should be recorded"); //assert that the deposit was successfully recorded
+    // Destructure the tuple to access the depositedAmount
+    (uint256 depositedAmount,,,) = depositHandler.userDepositInfo(user);
 
-    
-    vm.stopPrank(); //stop simulating the user
+    // Assert that the deposit was successfully recorded
+    assertEq(depositedAmount, depositAmount, "User deposit should be recorded in the struct");
+
+    // Stop simulating the user
+    vm.stopPrank(); 
 }
+
 
 }
