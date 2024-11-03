@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.28;
 
 import "./DepositHandler.sol";
+import {IBootcampManagerErrors} from "./interfaces/ICustomErrors.sol";
 
-contract BootcampManager {
+contract BootcampManager is IBootcampManagerErrors {
     address public owner;
     
     struct Bootcamp{
