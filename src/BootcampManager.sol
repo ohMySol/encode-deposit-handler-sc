@@ -2,9 +2,8 @@
 pragma solidity 0.8.28;
 
 import "./DepositHandler.sol";
-import {IBootcampManagerErrors} from "./interfaces/ICustomErrors.sol";
 
-contract BootcampManager is IBootcampManagerErrors {
+contract BootcampManager {
     address public owner;
     
     struct Bootcamp{
