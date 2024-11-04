@@ -5,8 +5,3 @@ pragma solidity 0.8.28;
 interface IDepositHandlerErrors {
     
 }
-
-/// Custom errors for BootcampManager.sol
-interface IBootcampManagerErrors {
-    
-}
