@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.28;
 
 import "forge-std/Test.sol";  
 import "../src/DepositHandler.sol"; 
@@ -25,11 +25,10 @@ contract DepositHandlerTest is Test {
     depositHandler = new DepositHandler(address(usdcToken)); // Deploy the DepositHandler contract
 }
 
-    function testInitialSetup() public view {
+    function testInitialSetup() public {
         assertEq(depositHandler.admin(), admin, "Admin should be the contract deployer");
         assertEq(address(depositHandler.usdcToken()), address(usdcToken), "USDC token address should be correct");
     }
-
     function testDeposit() public {
     uint256 depositAmount = 250e18; // 250 USDC in token decimals
     usdcToken.transfer(user, depositAmount); // Mint mock USDC to user
