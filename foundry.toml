@@ -3,3 +3,8 @@ src = "src"
 out = "out"
 test = 'test'
 libs = ["lib"]
+
+remappings = [
+    '@openzeppelin/=lib/openzeppelin-contracts/',
+    '@forge-std/=lib/forge-std'
+]
