@@ -14,12 +14,8 @@ import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
  * Apart from that contract allow to manage admins and bootcamps.
  */
 contract DepositHandler is IDepositHandlerErrors, Pausable, Ownable {
+    IERC20 public immutable usdc; //at the moment assume that Encode using only USDC.
     address public admin;
-    IERC20 public usdcToken;
-    //mapping(address => uint256) public deposits; 
-    //mapping(address => bool) public bootcampCompleted;
-    mapping(address => depositInfo) public userDepositInfo;
-
     struct depositInfo{
         uint256 depositedAmount;
         bool bootcampCompleted; //this is set by an admin from encode (Centralised)
@@ -27,9 +23,13 @@ contract DepositHandler is IDepositHandlerErrors, Pausable, Ownable {
         bool multiSender; //have not set this up yet
     }
 
+    //mapping(address => uint256) public deposits; 
+    //mapping(address => bool) public bootcampCompleted;
+    mapping(address => depositInfo) public userDepositInfo;
+    
     constructor(address _usdcToken) Ownable(msg.sender) {
+        usdc = IERC20(_usdcToken);
         admin = msg.sender;
-        usdcToken = IERC20(_usdcToken);
     }
 
     /*//////////////////////////////////////////////////
@@ -43,7 +43,7 @@ contract DepositHandler is IDepositHandlerErrors, Pausable, Ownable {
      */
     function deposit(uint256 _amount) external whenNotPaused { 
         require(_amount >= 249e18 && _amount <= 251e18, "Deposit must be 250USDC"); //maybe try and not hardcode, try and get the deposit value from the bootcampmanager +
-        require(usdcToken.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
+        require(usdc.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
         userDepositInfo[msg.sender].depositedAmount += _amount;
     }
 
@@ -62,7 +62,7 @@ contract DepositHandler is IDepositHandlerErrors, Pausable, Ownable {
         // Reset deposit before transferring to prevent re-entrancy
         userInfo.depositedAmount = 0;
 
-        require(usdcToken.transfer(msg.sender, depositAmount), "Transfer failed"); //change this to .call{value:....} as this the most approved way of transferring funds +
+        require(usdc.transfer(msg.sender, depositAmount), "Transfer failed"); //change this to .call{value:....} as this the most approved way of transferring funds +
     }
 
     /*//////////////////////////////////////////////////
