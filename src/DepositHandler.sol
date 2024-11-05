@@ -3,7 +3,6 @@ pragma solidity 0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
 
 /**
@@ -13,7 +12,7 @@ import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
  * Implements both user part and admin part for deposit management.
  * Apart from that contract allow to manage admins and bootcamps.
  */
-contract DepositHandler is IDepositHandlerErrors, Pausable, Ownable {
+contract DepositHandler is IDepositHandlerErrors, Pausable {
     IERC20 public immutable usdc; //at the moment assume that Encode using only USDC.
     address public admin;
     struct depositInfo{
@@ -27,7 +26,7 @@ contract DepositHandler is IDepositHandlerErrors, Pausable, Ownable {
     //mapping(address => bool) public bootcampCompleted;
     mapping(address => depositInfo) public userDepositInfo;
     
-    constructor(address _usdcToken) Ownable(msg.sender) {
+    constructor(address _usdcToken) {
         usdc = IERC20(_usdcToken);
         admin = msg.sender;
     }
@@ -81,7 +80,7 @@ contract DepositHandler is IDepositHandlerErrors, Pausable, Ownable {
      * @dev Contract owner is able to put a contract on pause in case of vulnerability
      * or any other problem. Functions using 'whenNotPaused()' modifier won't work.
      */
-    function pause() private onlyOwner {
+    function pause() private {
         _pause();
     }
 
@@ -89,7 +88,7 @@ contract DepositHandler is IDepositHandlerErrors, Pausable, Ownable {
      * @dev Contract owner is able to unpause a contract when vulnerability or
      * any other problem is resolved. Functions using 'whenNotPaused()' modifier will work.
      */
-    function unpause() private onlyOwner {
+    function unpause() private {
         _unpause();
     }
 }
