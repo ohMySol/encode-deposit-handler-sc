@@ -55,13 +55,13 @@ contract DepositHandler is IDepositHandlerErrors, Pausable {
         depositInfo storage userInfo = userDepositInfo[msg.sender];
 
         require(userInfo.bootcampCompleted, "Bootcamp not successfully completed");
-        uint256 depositAmount = userInfo.depositedAmount;
-        require(depositAmount > 0, "No deposit to withdraw");
+        uint256 amount = userInfo.depositedAmount;
+        require(amount > 0, "No deposit to withdraw");
 
         // Reset deposit before transferring to prevent re-entrancy
         userInfo.depositedAmount = 0;
 
-        require(depositToken.transfer(msg.sender, depositAmount), "Transfer failed"); //change this to .call{value:....} as this the most approved way of transferring funds +
+        require(depositToken.transfer(msg.sender, amount), "Transfer failed"); //change this to .call{value:....} as this the most approved way of transferring funds +
     }
 
     /*//////////////////////////////////////////////////
