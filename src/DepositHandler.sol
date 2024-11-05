@@ -80,7 +80,7 @@ contract DepositHandler is IDepositHandlerErrors, Pausable {
      * @dev Contract owner is able to put a contract on pause in case of vulnerability
      * or any other problem. Functions using 'whenNotPaused()' modifier won't work.
      */
-    function pause() private {
+    function pause() private { // ! requires access control
         _pause();
     }
 
@@ -88,7 +88,7 @@ contract DepositHandler is IDepositHandlerErrors, Pausable {
      * @dev Contract owner is able to unpause a contract when vulnerability or
      * any other problem is resolved. Functions using 'whenNotPaused()' modifier will work.
      */
-    function unpause() private {
+    function unpause() private { // ! requires access control
         _unpause();
     }
 }
