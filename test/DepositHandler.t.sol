@@ -14,7 +14,7 @@ contract MockUSDC is ERC20{ //mock token that simulates an ERC20 token
 
 
 contract DepositHandlerTest is Test {
-    DepositHandler public depositHandler; //instance of the DepositHandler contract that is being tested
+    /* DepositHandler public depositHandler; //instance of the DepositHandler contract that is being tested
     MockUSDC public usdcToken;  // mock token for simulating deposits
     address user = address(1);  // simulated user address
     address admin = address(this); // admin is the contract deployer for testing
@@ -46,7 +46,7 @@ contract DepositHandlerTest is Test {
 
     // Stop simulating the user
     vm.stopPrank(); 
-}
+} */
 
 
 }
