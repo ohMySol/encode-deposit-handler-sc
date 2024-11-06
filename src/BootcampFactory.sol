@@ -73,7 +73,9 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
                 ADMIN FUNCTIONS
     /////////////////////////////////////////////////*/
     /**
-     * @dev Set `MANAGER` role to `_manager` address.
+     * @notice Set manager role to user.
+     * @dev Set `MANAGER` role to `_manager` address. Function restricred
+     * to be called only by the `ADMIN` role.
      * 
      * @param _manager - address of the user that will have a `MANAGER` role.
      */
@@ -85,7 +87,9 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     }
 
     /**
-     * @dev Remove `MANAGER` role from `_manager` address.
+     * @notice Remove manager role from user.
+     * @dev Remove `MANAGER` role from `_manager` address. Function restricred
+     * to be called only by the `ADMIN` role.
      * 
      * @param _manager - address of the user that has a `MANAGER` role.
      */
@@ -94,5 +98,18 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
             revert BootcampFactory__CanNotGrantRoleToZeroAddress();
         }
         _revokeRole(MANAGER, _manager);
+    }
+
+    /*//////////////////////////////////////////////////
+                VIEW FUNCTIONS
+    /////////////////////////////////////////////////*/
+    /**
+     * @dev Returns a bootcamp information stored in `bootcamps` mapping.
+     * @param _id - id of the bootcamp under which it is stored in `bootcamps` mapping.
+     * 
+     * @return `Bootcamp` structure is returned.
+     */
+    function getBootcamp(uint256 _id) external view returns (Bootcamp memory) {
+        return bootcamps[_id];
     }
 }
