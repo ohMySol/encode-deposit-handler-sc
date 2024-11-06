@@ -3,9 +3,9 @@ pragma solidity 0.8.28;
 
 import "./DepositHandler.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IBootcampFactoryErrors} from "./interfaces/ICustomErrors.sol";
 
-contract BootcampFactory is AccessControl {
+contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     event BootcampCreated (
         uint256 bootcampId,
         uint256 depositAmount,
@@ -20,10 +20,10 @@ contract BootcampFactory is AccessControl {
 
     constructor() {
         _grantRole(ADMIN, msg.sender); // Grant the deployer the admin role
-        _setRoleAdmin(MANAGER, ADMIN); // Set the admin role as the administrator for the MANAGER role
+        _setRoleAdmin(MANAGER, ADMIN); // Set the `ADMIN` role as the administrator for the `MANAGER` role
     }
 
-    function createBootcamp(uint256 _depositAmount, IERC20 _depositToken) external onlyRole(MANAGER) {
+    function createBootcamp(uint256 _depositAmount, address _depositToken) external onlyRole(MANAGER) {
         DepositHandler bootcamp = new DepositHandler(_depositAmount, _depositToken);
 
         totalBootcampAmount++;
