@@ -26,9 +26,9 @@ contract DepositHandler is IDepositHandlerErrors, Pausable {
     //mapping(address => bool) public bootcampCompleted;
     mapping(address => depositInfo) public userDepositInfo;
     
-    constructor(uint256 _depositAmount, IERC20 _depositToken) {
+    constructor(uint256 _depositAmount, address _depositToken) {
         depositAmount = _depositAmount;
-        depositToken = _depositToken;
+        depositToken = IERC20(_depositToken);
     }
 
     /*//////////////////////////////////////////////////
