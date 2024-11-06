@@ -24,6 +24,9 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     }
 
     function createBootcamp(uint256 _depositAmount, address _depositToken) external onlyRole(MANAGER) {
+        if (_depositToken == address(0)) {
+            revert BootcampFactory__DepositTokenCanNotBeZeroAddress();
+        }
         DepositHandler bootcamp = new DepositHandler(_depositAmount, _depositToken);
 
         totalBootcampAmount++;
@@ -33,10 +36,16 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     }
 
     function grantManagerRole(address _manager) external onlyRole(ADMIN) {
+        if (_manager == address(0)) {
+            revert BootcampFactory__CanNotGrantRoleToZeroAddress();
+        }
         _grantRole(MANAGER, _manager);
     }
 
     function revokeManagerRole(address _manager) external onlyRole(ADMIN) {
+        if (_manager == address(0)) {
+            revert BootcampFactory__CanNotGrantRoleToZeroAddress();
+        }
         _revokeRole(MANAGER, _manager);
     }
 }
