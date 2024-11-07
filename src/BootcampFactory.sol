@@ -63,17 +63,18 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         if (_depositToken == address(0)) {
             revert BootcampFactory__DepositTokenCanNotBeZeroAddress();
         }
-        DepositHandler bootcamp = new DepositHandler(_depositAmount, _depositToken);
+        DepositHandler bootcamp = new DepositHandler(_depositAmount, _depositToken, msg.sender);
 
         totalBootcampAmount++;
-        bootcamps[totalBootcampAmount] = Bootcamp({
-            id: totalBootcampAmount,
+        uint256 id = totalBootcampAmount; // store storage var-l locally
+        bootcamps[id] = Bootcamp({
+            id: id,
             depositAmount: _depositAmount,
             depositToken: _depositToken,
             bootcampAddress: address(bootcamp)
         });
         
-        emit BootcampCreated(totalBootcampAmount, _depositAmount, _depositToken, address(bootcamp));
+        emit BootcampCreated(id, _depositAmount, _depositToken, address(bootcamp));
     }
 
     /*//////////////////////////////////////////////////
@@ -91,7 +92,12 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         if (_account == address(0)) {
             revert BootcampFactory__CanNotGrantRoleToZeroAddress();
         }
-        _grantRole(_role, _account);
+        if (_role == ADMIN || _role == MANAGER) {
+            _grantRole(_role, _account);
+        } else {
+            revert BootcampFactory__GrantNonExistentRole();
+        }
+        
     }
 
     /**
@@ -106,7 +112,11 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         if (_account == address(0)) {
             revert BootcampFactory__CanNotRevokeRoleFromZeroAddress();
         }
-        _revokeRole(_role, _account);
+        if (_role == ADMIN || _role == MANAGER) {
+            _revokeRole(_role, _account);
+        } else {
+            revert BootcampFactory__GrantNonExistentRole();
+        }
     }
 
     /*//////////////////////////////////////////////////
