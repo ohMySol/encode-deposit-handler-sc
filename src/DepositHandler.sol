@@ -24,15 +24,17 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     bytes32 public constant MANAGER = keccak256("MANAGER");
     uint256 public immutable depositAmount;
     IERC20 public immutable depositToken;
+    //mapping(address => bool) public bootcampCompleted;
+    mapping(address => depositInfo) public deposits;
     
+    event DepositDone(
+        address depositor,
+        uint256 depositAmount
+    );
     struct depositInfo {
         uint256 depositedAmount;
         bool bootcampCompleted; //this is set by an admin from encode (Centralised)
     }
-    
-    //mapping(address => uint256) public deposits; 
-    //mapping(address => bool) public bootcampCompleted;
-    mapping(address => depositInfo) public userDepositInfo;
     
     constructor(uint256 _depositAmount, address _depositToken, address _manager) {
         depositAmount = _depositAmount;
@@ -51,10 +53,17 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * @param _amount - USDC amount.
      */
     function deposit(uint256 _amount) external whenNotPaused { 
-        
-        require(_amount >= 249e18 && _amount <= 251e18, "Deposit must be 250USDC"); //maybe try and not hardcode, try and get the deposit value from the bootcampmanager +
-        require(depositToken.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
-        userDepositInfo[msg.sender].depositedAmount += _amount;
+        uint256 allowance = depositToken.allowance(msg.sender, address(this));
+        if (_amount != depositAmount) {
+            revert DepositHandler__IncorrectDepositedAmount(_amount);
+        }
+        if (allowance < _amount) {
+            revert DepositHandler__ApprovedAmountLessThanDeposit(allowance);
+        }
+
+        emit DepositDone(msg.sender, _amount);
+        deposits[msg.sender].depositedAmount += _amount;
+        depositToken.transferFrom(msg.sender, address(this), _amount);
     }
 
     /**
