@@ -55,7 +55,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * by unique id.
      * 
      * Emits a {BootcampCreated} event.
-     * .
+     * 
      * @param _depositAmount - bootcamp deposit amount.
      * @param _depositToken  - token address which is used for deposit. 
      */
@@ -80,31 +80,33 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
                 ADMIN FUNCTIONS
     /////////////////////////////////////////////////*/
     /**
-     * @notice Set manager role to user.
-     * @dev Set `MANAGER` role to `_manager` address. Function restricred
+     * @notice Set a role to user.
+     * @dev Set `MANAGER` or `ADMIN` role to `_account` address. Function restricred
      * to be called only by the `ADMIN` role.
      * 
-     * @param _manager - address of the user that will have a `MANAGER` role.
+     * @param _role - bytes32 respresentation of the role.
+     * @param _account - address of the user that will have an new role.
      */
-    function grantManagerRole(address _manager) external onlyRole(ADMIN) {
-        if (_manager == address(0)) {
+    function grantARole(bytes32 _role, address _account) external onlyRole(ADMIN) {
+        if (_account == address(0)) {
             revert BootcampFactory__CanNotGrantRoleToZeroAddress();
         }
-        _grantRole(MANAGER, _manager);
+        _grantRole(_role, _account);
     }
 
     /**
-     * @notice Remove manager role from user.
-     * @dev Remove `MANAGER` role from `_manager` address. Function restricred
+     * @notice Remove role from user.
+     * @dev Remove `MANAGER` or `ADMIN` role from `_manager` address. Function restricred
      * to be called only by the `ADMIN` role.
-     * 
-     * @param _manager - address of the user that has a `MANAGER` role.
+     *
+     * @param _role - bytes32 respresentation of the role. 
+     * @param _account - address of the user that has a `MANAGER` role.
      */
-    function revokeManagerRole(address _manager) external onlyRole(ADMIN) {
-        if (_manager == address(0)) {
-            revert BootcampFactory__CanNotGrantRoleToZeroAddress();
+    function revokeARole(bytes32 _role, address _account) external onlyRole(ADMIN) {
+        if (_account == address(0)) {
+            revert BootcampFactory__CanNotRevokeRoleFromZeroAddress();
         }
-        _revokeRole(MANAGER, _manager);
+        _revokeRole(_role, _account);
     }
 
     /*//////////////////////////////////////////////////
