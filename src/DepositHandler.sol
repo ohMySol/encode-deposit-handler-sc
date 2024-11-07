@@ -8,8 +8,8 @@ import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
 /*
 1. Fuction to do a deposit for bootcamp.
 2. Function to withdraw a deposit from bootcamp.
-3. Pause function to pause a contract(only MANAGER).
-4. Unpause function to unpause a contract(only MANAGER).
+3. Pause function to pause a contract(only MANAGER).+
+4. Unpause function to unpause a contract(only MANAGER).+
 5. Function to get deposit information.
 */
 
@@ -28,8 +28,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     struct depositInfo {
         uint256 depositedAmount;
         bool bootcampCompleted; //this is set by an admin from encode (Centralised)
-        bool yeild; //have not set this up yet
-        bool multiSender; //have not set this up yet
     }
     
     //mapping(address => uint256) public deposits; 
@@ -46,12 +44,14 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
                 USER FUNCTIONS
     /////////////////////////////////////////////////*/
     /**
+     * @notice Do deposit of USDC into this contract.
      * @dev Allow user to deposit USDC '_amount' for a specific bootcamp. 
      * Deposited amount will be locked inside this contract till the end of
      * the bootcamp.
      * @param _amount - USDC amount.
      */
     function deposit(uint256 _amount) external whenNotPaused { 
+        
         require(_amount >= 249e18 && _amount <= 251e18, "Deposit must be 250USDC"); //maybe try and not hardcode, try and get the deposit value from the bootcampmanager +
         require(depositToken.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
         userDepositInfo[msg.sender].depositedAmount += _amount;
