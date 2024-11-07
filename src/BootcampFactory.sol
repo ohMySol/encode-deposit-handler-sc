@@ -21,7 +21,6 @@ import {IBootcampFactoryErrors} from "./interfaces/ICustomErrors.sol";
 contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     bytes32 public constant ADMIN = keccak256("ADMIN"); // Main Role
     bytes32 public constant MANAGER = keccak256("MANAGER"); // 2nd Roles
-   
     uint256 public totalBootcampAmount;
     mapping (uint256 => Bootcamp) public bootcamps;
 
