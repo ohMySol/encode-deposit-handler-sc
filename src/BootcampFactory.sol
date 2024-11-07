@@ -5,12 +5,19 @@ import "./DepositHandler.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import {IBootcampFactoryErrors} from "./interfaces/ICustomErrors.sol";
 
-/// @title Bootcamp Factory contract.
-/// @author @ohMySol, @nynko, @ok567
-/// @notice Contract create new bootcamps.
-/// @dev Contract for creation new instances of the `DepositHandler` contract with a Factory pattern. 
-/// New instances are stored inside this factory contract and they can be quickly retrieved for the 
-/// information and frontend usage. 
+/**
+ * @title Bootcamp Factory contract.
+ * @author @ohMySol, @nynko, @ok567
+ * @notice Contract create new bootcamps.
+ * @dev Contract for creation new instances of the `DepositHandler` contract with a Factory pattern. 
+ * New instances are stored inside this factory contract and they can be quickly retrieved for the 
+ * information and frontend usage.
+ * 
+ * Roles:
+ *  1. ADMIN - main role which is set up automatically for a deployer address. This role should potentialy
+ *  manage all underlying roles like MANAGER role, and grant a roles to a new users.
+ *  2. MANAGER - 2nd role which is responsible for creating new bootcamp instances once new bootcamp is launched.
+ */
 contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     bytes32 public constant ADMIN = keccak256("ADMIN"); // Main Role
     bytes32 public constant MANAGER = keccak256("MANAGER"); // 2nd Roles
