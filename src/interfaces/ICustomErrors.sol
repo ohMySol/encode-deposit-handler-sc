@@ -23,4 +23,9 @@ interface IBootcampFactoryErrors {
      * with token address = `addres(0)`.
      */
     error BootcampFactory__DepositTokenCanNotBeZeroAddress();
+
+     /**
+     * @dev Error indicates that ADMIN tries to grant a role which doesn't exist.
+     */
+    error BootcampFactory__GrantNonExistentRole();
 }
