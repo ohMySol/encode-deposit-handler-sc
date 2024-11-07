@@ -3,7 +3,15 @@ pragma solidity 0.8.28;
 
 /// Custom errors for DepositHandler.sol
 interface IDepositHandlerErrors {
-    
+    /**
+     * @dev Error indicates that user tries to grant a role to `addres(0)`.
+     */
+    error DepositHandler__IncorrectDepositedAmount(uint256 _actualAmount);
+
+    /**
+     * @dev Error indicates that user doesn't allowed contract to spent enough tokens.
+     */
+    error DepositHandler__ApprovedAmountLessThanDeposit(uint256 _approvedAmount);
 }
 
 /// Custom errors for BootcampFactory.sol
