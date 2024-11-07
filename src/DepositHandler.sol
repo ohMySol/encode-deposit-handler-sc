@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
 
 /**
@@ -12,9 +13,11 @@ import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
  * Implements both user part and admin part for deposit management.
  * Apart from that contract allow to manage admins and bootcamps.
  */
-contract DepositHandler is IDepositHandlerErrors, Pausable {
+contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
+    bytes32 public constant MANAGER = keccak256("MANAGER");
     uint256 public immutable depositAmount;
     IERC20 public immutable depositToken;
+    
     struct depositInfo {
         uint256 depositedAmount;
         bool bootcampCompleted; //this is set by an admin from encode (Centralised)
@@ -26,9 +29,10 @@ contract DepositHandler is IDepositHandlerErrors, Pausable {
     //mapping(address => bool) public bootcampCompleted;
     mapping(address => depositInfo) public userDepositInfo;
     
-    constructor(uint256 _depositAmount, address _depositToken) {
+    constructor(uint256 _depositAmount, address _depositToken, address _manager) {
         depositAmount = _depositAmount;
         depositToken = IERC20(_depositToken);
+        _grantRole(MANAGER, _manager);
     }
 
     /*//////////////////////////////////////////////////
@@ -74,9 +78,6 @@ contract DepositHandler is IDepositHandlerErrors, Pausable {
         userDepositInfo[user].bootcampCompleted = true;
     } */
 
-    /*//////////////////////////////////////////////////
-                OWNER FUNCTIONS
-    /////////////////////////////////////////////////*/
     /**
      * @dev Contract owner is able to put a contract on pause in case of vulnerability
      * or any other problem. Functions using 'whenNotPaused()' modifier won't work.
