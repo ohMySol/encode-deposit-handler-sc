@@ -5,6 +5,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
+/*
+1. Fuction to do a deposit for bootcamp.
+2. Function to withdraw a deposit from bootcamp.
+3. Pause function to pause a contract(only MANAGER).
+4. Unpause function to unpause a contract(only MANAGER).
+5. Function to get deposit information.
+*/
 
 /**
  * @title Deposit Handler contract.
@@ -79,18 +86,22 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     } */
 
     /**
-     * @dev Contract owner is able to put a contract on pause in case of vulnerability
-     * or any other problem. Functions using 'whenNotPaused()' modifier won't work.
+     * @notice Set contract on pause, and stop interraction with critical functions.
+     * @dev Manager is able to put a contract on pause in case of vulnerability
+     * or any other problem. Functions using `whenNotPaused()` modifier won't work.
+     * Function restricted to be called only by `MANAGER` of this contract.
      */
-    function pause() private { // ! requires access control
+    function pause() private onlyRole(MANAGER) {
         _pause();
     }
 
     /**
-     * @dev Contract owner is able to unpause a contract when vulnerability or
-     * any other problem is resolved. Functions using 'whenNotPaused()' modifier will work.
+     * @notice Remove contract from pause, and allow interraction with critical functions.
+     * @dev Manager is able to unpause a contract when vulnerability or
+     * any other problem is resolved. Functions using `whenNotPaused()` modifier will work.
+     * Function restricted to be called only by `MANAGER` of this contract.
      */
-    function unpause() private { // ! requires access control
+    function unpause() private onlyRole(MANAGER) {
         _unpause();
     }
 }
