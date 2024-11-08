@@ -26,15 +26,19 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     IERC20 public immutable depositToken;
     //mapping(address => bool) public bootcampCompleted;
     mapping(address => depositInfo) public deposits;
-    
-    event DepositDone(
-        address depositor,
-        uint256 depositAmount
-    );
+
     struct depositInfo {
         uint256 depositedAmount;
         bool bootcampCompleted; //this is set by an admin from encode (Centralised)
     }
+    event DepositDone(
+        address depositor,
+        uint256 depositAmount
+    );
+    event DepositWithdrawn(
+        address depositor,
+        uint256 withdrawAmount
+    );
     
     constructor(uint256 _depositAmount, address _depositToken, address _manager) {
         depositAmount = _depositAmount;
@@ -47,13 +51,17 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     /////////////////////////////////////////////////*/
     /**
      * @notice Do deposit of USDC into this contract.
-     * @dev Allow user to deposit USDC '_amount' for a specific bootcamp. 
+     * @dev Allow `_depositor` to deposit USDC '_amount' for a bootcamp. 
      * Deposited amount will be locked inside this contract till the end of
-     * the bootcamp.
+     * the bootcamp. Function restricted to be called only when contract is not on Pause.
+     * 
+     * Emits a {DepositDone} event.
+     * 
      * @param _amount - USDC amount.
+     * @param _depositor - address of the bootcamp participant.
      */
-    function deposit(uint256 _amount) external whenNotPaused { 
-        uint256 allowance = depositToken.allowance(msg.sender, address(this));
+    function deposit(uint256 _amount, address _depositor) external whenNotPaused { 
+        uint256 allowance = depositToken.allowance(_depositor, address(this));
         if (_amount != depositAmount) {
             revert DepositHandler__IncorrectDepositedAmount(_amount);
         }
@@ -61,27 +69,28 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
             revert DepositHandler__ApprovedAmountLessThanDeposit(allowance);
         }
 
-        emit DepositDone(msg.sender, _amount);
-        deposits[msg.sender].depositedAmount += _amount;
-        depositToken.transferFrom(msg.sender, address(this), _amount);
+        emit DepositDone(_depositor, _amount);
+        deposits[_depositor].depositedAmount += _amount;
+        depositToken.transferFrom(_depositor, address(this), _amount);
     }
 
     /**
-     * @dev Allow user to withdraw USDC '_amount' for a specific bootcamp. 
-     * Deposited amount will be locked inside this contract till the end of
-     * the bootcamp.
+     * @dev Allow `_depositor` to withdraw USDC '_amount' from a bootcamp. 
+     * Function restricted to be called only when contract is not on Pause.
+     * 
+     * Emits a {DepositWithdrawn} event.
+     * 
+     * @param _amount - USDC amount.
+     * @param _depositor - address of the bootcamp participant.
      */
-    function withdraw() external whenNotPaused {
-        depositInfo storage userInfo = userDepositInfo[msg.sender];
-
-        require(userInfo.bootcampCompleted, "Bootcamp not successfully completed");
-        uint256 amount = userInfo.depositedAmount;
-        require(amount > 0, "No deposit to withdraw");
-
-        // Reset deposit before transferring to prevent re-entrancy
-        userInfo.depositedAmount = 0;
-
-        require(depositToken.transfer(msg.sender, amount), "Transfer failed"); //change this to .call{value:....} as this the most approved way of transferring funds +
+    function withdraw(uint256 _amount, address _depositor) external whenNotPaused {
+        if (getDeposit(_depositor) != _amount) {
+            revert DepositHandler__IncorrectAmountForWithdrawal(_amount);
+        }
+        
+        emit DepositWithdrawn(_depositor, _amount);
+        deposits[_depositor].depositedAmount = 0;
+        depositToken.transfer(msg.sender, _amount);
     }
 
     /*//////////////////////////////////////////////////
@@ -112,5 +121,19 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      */
     function unpause() private onlyRole(MANAGER) {
         _unpause();
+    }
+
+     /*//////////////////////////////////////////////////
+                VIEW FUNCTIONS
+    /////////////////////////////////////////////////*/
+    /**
+     * @dev Allow to query a deposited amount of tokens for `_depositor`.
+     * 
+     * @param _depositor - address of the person who did a deposit.
+     * 
+     * @return - `uint256` deposit value of the `_depositor`.
+     */
+    function getDeposit(address _depositor) public view returns (uint256) {
+        return deposits[_depositor].depositedAmount;
     }
 }
