@@ -9,9 +9,14 @@ interface IDepositHandlerErrors {
     error DepositHandler__IncorrectDepositedAmount(uint256 _actualAmount);
 
     /**
-     * @dev Error indicates that user doesn't allowed contract to spent enough tokens.
+     * @dev Error indicates that user didn't allow contract to spent enough tokens.
      */
     error DepositHandler__ApprovedAmountLessThanDeposit(uint256 _approvedAmount);
+
+    /**
+     * @dev Error indicates that user request a wrong amount for withdrawal.
+     */
+    error DepositHandler__IncorrectAmountForWithdrawal(uint256 _withdrawAmount);
 }
 
 /// Custom errors for BootcampFactory.sol
