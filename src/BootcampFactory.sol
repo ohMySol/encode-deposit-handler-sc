@@ -24,19 +24,19 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     uint256 public totalBootcampAmount;
     mapping (uint256 => Bootcamp) public bootcamps;
 
-    event BootcampCreated (
-        uint256 bootcampId,
-        uint256 depositAmount,
-        address depositToken,
-        address bootcampAddress
-    );
     struct Bootcamp {
         uint256 id;
         uint256 depositAmount;
         address depositToken;
         address bootcampAddress;
     }
-    
+    event BootcampCreated (
+        uint256 bootcampId,
+        uint256 depositAmount,
+        address depositToken,
+        address bootcampAddress
+    );
+        
     constructor() {
         _grantRole(ADMIN, msg.sender); // Grant the deployer the admin role
         _setRoleAdmin(MANAGER, ADMIN); // Set the `ADMIN` role as the administrator for the `MANAGER` role
