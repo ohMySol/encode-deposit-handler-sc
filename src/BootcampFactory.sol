@@ -58,11 +58,21 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * @param _depositAmount - bootcamp deposit amount.
      * @param _depositToken  - token address which is used for deposit. 
      */
-    function createBootcamp(uint256 _depositAmount, address _depositToken) external onlyRole(MANAGER) {
+    function createBootcamp(
+        uint256 _depositAmount, 
+        address _depositToken, 
+        uint256 _bootcampDuration) 
+        external onlyRole(MANAGER) 
+    {
         if (_depositToken == address(0)) {
             revert BootcampFactory__DepositTokenCanNotBeZeroAddress();
         }
-        DepositHandler bootcamp = new DepositHandler(_depositAmount, _depositToken, msg.sender);
+        DepositHandler bootcamp = new DepositHandler(
+            _depositAmount, 
+            _depositToken, 
+            msg.sender, 
+            _bootcampDuration
+        );
 
         totalBootcampAmount++;
         uint256 id = totalBootcampAmount; // store storage var-l locally

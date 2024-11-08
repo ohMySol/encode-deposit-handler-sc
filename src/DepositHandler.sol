@@ -23,6 +23,8 @@ import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
 contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     bytes32 public constant MANAGER = keccak256("MANAGER");
     uint256 public immutable depositAmount;
+    uint256 public immutable bootcampDuration; // store value in seconds.
+    uint256 public immutable bootcampStartTime;
     IERC20 public immutable depositToken;
     //mapping(address => bool) public bootcampCompleted;
     mapping(address => depositInfo) public deposits;
@@ -39,10 +41,17 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         address depositor,
         uint256 withdrawAmount
     );
-    
-    constructor(uint256 _depositAmount, address _depositToken, address _manager) {
+
+    constructor(
+        uint256 _depositAmount, 
+        address _depositToken, 
+        address _manager, 
+        uint256 _bootcampDuration) 
+    {
         depositAmount = _depositAmount;
         depositToken = IERC20(_depositToken);
+        bootcampStartTime = block.timestamp;
+        bootcampDuration = _bootcampDuration * 1 days;// duration value is converted to seconds.
         _grantRole(MANAGER, _manager);
     }
 
@@ -90,7 +99,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         
         emit DepositWithdrawn(_depositor, _amount);
         deposits[_depositor].depositedAmount = 0;
-        depositToken.transfer(msg.sender, _amount);
+        depositToken.transfer(_depositor, _amount);
     }
 
     /*//////////////////////////////////////////////////
