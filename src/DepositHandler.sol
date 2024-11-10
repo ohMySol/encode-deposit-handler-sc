@@ -78,9 +78,9 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
             revert DepositHandler__ApprovedAmountLessThanDeposit(allowance);
         }
 
-        emit DepositDone(_depositor, _amount);
         deposits[_depositor].depositedAmount += _amount;
         depositToken.transferFrom(_depositor, address(this), _amount);
+        emit DepositDone(_depositor, _amount);
     }
 
     /**
@@ -93,13 +93,13 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * @param _depositor - address of the bootcamp participant.
      */
     function withdraw(uint256 _amount, address _depositor) external whenNotPaused {
-        if (getDeposit(_depositor) != _amount) {
+        if (deposits[_depositor].depositedAmount != _amount) {
             revert DepositHandler__IncorrectAmountForWithdrawal(_amount);
         }
         
-        emit DepositWithdrawn(_depositor, _amount);
         deposits[_depositor].depositedAmount = 0;
         depositToken.transfer(_depositor, _amount);
+        emit DepositWithdrawn(_depositor, _amount);
     }
 
     /*//////////////////////////////////////////////////
