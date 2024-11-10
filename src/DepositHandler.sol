@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
 /*
-1. Fuction to do a deposit for bootcamp.
+1. Fuction to do a deposit for bootcamp. +
 2. Function to withdraw a deposit from bootcamp.
 3. Pause function to pause a contract(only MANAGER).+
 4. Unpause function to unpause a contract(only MANAGER).+
@@ -23,7 +23,7 @@ import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
 contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     bytes32 public constant MANAGER = keccak256("MANAGER");
     uint256 public immutable depositAmount;
-    uint256 public immutable bootcampDuration; // store value in seconds.
+    uint256 public immutable bootcampDuration;
     uint256 public immutable bootcampStartTime;
     IERC20 public immutable depositToken;
     //mapping(address => bool) public bootcampCompleted;
@@ -130,19 +130,5 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      */
     function unpause() private onlyRole(MANAGER) {
         _unpause();
-    }
-
-     /*//////////////////////////////////////////////////
-                VIEW FUNCTIONS
-    /////////////////////////////////////////////////*/
-    /**
-     * @dev Allow to query a deposited amount of tokens for `_depositor`.
-     * 
-     * @param _depositor - address of the person who did a deposit.
-     * 
-     * @return - `uint256` deposit value of the `_depositor`.
-     */
-    function getDeposit(address _depositor) public view returns (uint256) {
-        return deposits[_depositor].depositedAmount;
     }
 }

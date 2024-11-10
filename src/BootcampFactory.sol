@@ -127,17 +127,4 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
             revert BootcampFactory__GrantNonExistentRole();
         }
     }
-
-    /*//////////////////////////////////////////////////
-                VIEW FUNCTIONS
-    /////////////////////////////////////////////////*/
-    /**
-     * @dev Returns a bootcamp information stored in `bootcamps` mapping.
-     * @param _id - id of the bootcamp under which it is stored in `bootcamps` mapping.
-     * 
-     * @return `Bootcamp` structure is returned.
-     */
-    function getBootcamp(uint256 _id) external view returns (Bootcamp memory) {
-        return bootcamps[_id];
-    }
 }
