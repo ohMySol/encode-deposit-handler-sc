@@ -29,9 +29,10 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     mapping(address => depositInfo) public deposits;
 
     enum Status { // status of the bootcamp participant. 
-        Deposit,
-        InProgress,
-        Withdraw
+        Deposit, // participant allowed for deposit
+        InProgress, // participant passing a bootcamp
+        Withdraw, // praticipant allowed for withdraw
+        Pass // bootcamp passed
     }
     struct depositInfo {
         uint256 depositedAmount;
@@ -46,10 +47,27 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         uint256 withdrawAmount
     );
 
+    /**
+     * @dev Checks if user has a required status to do a deposit/withdraw. 
+     */ 
     modifier isAllowed(Status _status) {
         Status status = deposits[msg.sender].status;
         if (status != _status) {
             revert DepositHandler__NotAllowedActionWithYourStatus();
+        }
+        _;
+    }
+
+    /**
+     * @dev Checks if user has a required status to do a deposit/withdraw.
+     * It is '<' instead of '<=', because I assume that encode team/manager need some time after
+     * the final day of the bootcamp to sum up all participants results. Like a day after a bootcamp users
+     * will be able to withdraw their deposits. 
+     */
+    
+    modifier whenFinished {
+        if (block.timestamp < bootcampStartTime + bootcampDuration) {
+            revert DepositHandler__BootcampIsNotYetFinished();
         }
         _;
     }
@@ -93,6 +111,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
             revert DepositHandler__ApprovedAmountLessThanDeposit(allowance);
         }
 
+        deposits[_depositor].status = Status.InProgress; // set status to InProgress once user did a deposit, so that it means user is participating in bootcamp.
         deposits[_depositor].depositedAmount += _amount;
         depositToken.transferFrom(_depositor, address(this), _amount);
         emit DepositDone(_depositor, _amount);
@@ -114,6 +133,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
             revert DepositHandler__IncorrectAmountForWithdrawal(_amount);
         }
         
+        deposits[_depositor].status = Status.Pass; // set status to Pass once user did a deposit withdrawal, so that it means user fully finished a bootcamp.
         deposits[_depositor].depositedAmount = 0;
         depositToken.transfer(_depositor, _amount);
         emit DepositWithdrawn(_depositor, _amount);
@@ -122,13 +142,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     /*//////////////////////////////////////////////////
                 ADMIN FUNCTIONS
     /////////////////////////////////////////////////*/
-    // Mark a user as having completed the bootcamp (only admin)
-    /* function markBootcampComplete(address user) external {
-        // ! Require access control mechanism with the roles like in BootcampDepositFactory.sol.
-        require(msg.sender == admin, "Only admin can mark completion"); //this could be done with a modifier instead to save gas?
-        userDepositInfo[user].bootcampCompleted = true;
-    } */
-
     /**
      * @notice Set contract on pause, and stop interraction with critical functions.
      * @dev Manager is able to put a contract on pause in case of vulnerability
@@ -152,6 +165,8 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     }
 
     /**
+     * @notice Allow a list of selected participants, who passed interview stage, 
+     * to do a deposit to the bootcamp.
      * @dev Set `Deposit` status for all addresses in the `_participants` array.
      * Faster way to set status for a a list of participants instead of calling on eby one.
      * Function restrictions:
@@ -170,14 +185,17 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     }
 
     /**
+     * @notice Allow a list of selected participants, who successfully finished a bootcamp
+     * to withdraw their deposit from the bootcamp.
      * @dev Set `Withdraw` status for all addresses in the `_participants` array.
      * Faster way to set status for a a list of participants instead of calling on eby one.
      * Function restrictions:
      *  - Can only be called by `MANAGER` of this contract.
+     *  - Can only be called when the bootcamp is finished.
      * 
      * @param _participants - array of participants addresses.
      */
-    function allowWithdrawBatch(address[] calldata _participants) external onlyRole(MANAGER) {
+    function allowWithdrawBatch(address[] calldata _participants) external whenFinished onlyRole(MANAGER) {
         uint256 length = _participants.length;
         if (length == 0) {
             revert DepositHandler__ParticipantsArraySizeIsZero();
