@@ -32,6 +32,11 @@ interface IDepositHandlerErrors {
      * @dev Error indicates that user tries to call a function without required status.
      */
     error DepositHandler__NotAllowedActionWithYourStatus();
+
+    /**
+     * @dev Error indicates that 
+     */
+    error DepositHandler__BootcampIsNotYetFinished();
 }
 
 /// Custom errors for BootcampFactory.sol
