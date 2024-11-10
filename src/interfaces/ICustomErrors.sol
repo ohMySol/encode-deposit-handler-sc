@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 /// Custom errors for DepositHandler.sol
 interface IDepositHandlerErrors {
     /**
-     * @dev Error indicates that user tries to grant a role to `addres(0)`.
+     * @dev Error indicates that user tries to deposit an amount < `bootcampDeposit`.
      */
     error DepositHandler__IncorrectDepositedAmount(uint256 _actualAmount);
 
@@ -17,6 +17,21 @@ interface IDepositHandlerErrors {
      * @dev Error indicates that user request a wrong amount for withdrawal.
      */
     error DepositHandler__IncorrectAmountForWithdrawal(uint256 _withdrawAmount);
+
+    /**
+     * @dev Error indicates that manager tries to change a state of the contract for `address(0)`.
+     */
+    error DepositHandler__ParticipantAddressZero();
+
+    /**
+     * @dev Error indicates that manager calls a function with zero size array.
+     */
+    error DepositHandler__ParticipantsArraySizeIsZero();
+
+    /**
+     * @dev Error indicates that user tries to call a function without required status.
+     */
+    error DepositHandler__NotAllowedActionWithYourStatus();
 }
 
 /// Custom errors for BootcampFactory.sol
