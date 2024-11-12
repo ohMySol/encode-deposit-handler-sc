@@ -12,7 +12,7 @@ import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
 4. Unpause function to unpause a contract(only MANAGER).+
 5. Add deposit time to the bootcamp. +
 6. Add extra withdraw function.
-7. Add status for participants who not passed a bootcamp.
+7. Add status for participants who not passed a bootcamp.+
 */
 
 /**
@@ -28,7 +28,8 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     uint256 public immutable depositAmount;
     uint256 public immutable bootcampDuration;
     uint256 public immutable bootcampStartTime;
-    IERC20 public immutable depositToken;    
+    IERC20 public immutable depositToken;
+    bool allowEmergencyWithdraw;
     mapping(address => depositInfo) public deposits;
 
     enum Status { // status of the bootcamp participant. 
@@ -67,7 +68,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * the final day of the bootcamp to sum up all participants results. Like a day after a bootcamp users
      * will be able to withdraw their deposits. 
      */
-    
     modifier whenFinished {
         if (block.timestamp < bootcampStartTime + bootcampDuration) {
             revert DepositHandler__BootcampIsNotYetFinished();
@@ -107,7 +107,8 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * @param _amount - USDC amount.
      * @param _depositor - address of the bootcamp participant.
      */
-    function deposit(uint256 _amount, address _depositor) external whenNotPaused { 
+    function deposit(uint256 _amount, address _depositor) external whenNotPaused {
+        _notAddressZero(_depositor);
         uint256 allowance = depositToken.allowance(_depositor, address(this));
         if (block.timestamp > bootcampStartTime) { // checking that user can do a deposit only during depositing stage
             revert  DepositHandler__DepositingStageAlreadyClosed();
@@ -126,71 +127,99 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     }
 
     /**
+     * @notice Participant can withdraw his USDC deposit through this function.
      * @dev Allow `_depositor` to withdraw USDC '_amount' from a bootcamp. 
      * Function restrictions: 
      *  - Contract shouldn't be on Pause.
      *  - Can only be called when user has a status `Withdraw`.
-     *  - `_amount` should be a correct value, which user originally deposited.
+     * 
+     * @param _amount - USDC amount.
+     * @param _depositor - address of the participant.
+     */
+    function withdraw(uint256 _amount, address _depositor) external isAllowed(Status.Withdraw) {
+        _withdraw(_amount, _depositor, Status.Passed);
+    }
+
+    function emergencyWithdraw(uint256 _amount, address _depositor) external {
+        if (!allowEmergencyWithdraw) {
+            revert DepositHandler__EmergencyWithdrawIsNotApproved();
+        }
+        _withdraw(_amount, _depositor, Status.Passed);
+    }
+
+    /**
+     * @dev Withdraw `_depositor` USDC '_amount' from a bootcamp back to `_depositor`. 
+     * Function restrictions: 
+     *  - Contract shouldn't be on Pause.
+     *  - `_amount` value should be the same as required in `depositAmount`.
+     *  - `depositor` address can't be address(0).
      * 
      * Emits a {DepositWithdrawn} event.
      * 
      * @param _amount - USDC amount.
-     * @param _depositor - address of the bootcamp participant.
+     * @param _depositor - address of the bootcamp participant. 
+     * @param _status - status of the participant after withdrawal.
      */
-    function withdraw(uint256 _amount, address _depositor) external whenNotPaused isAllowed(Status.Withdraw) {
-        if (deposits[_depositor].depositedAmount != _amount) {
-            revert DepositHandler__IncorrectAmountForWithdrawal(_amount);
-        }
+    function _withdraw(uint256 _amount, address _depositor, Status _status) internal whenNotPaused {
+        _notAddressZero(_depositor);
+        _checkWithdrawAmount(_amount, _depositor);
         
-        deposits[_depositor].status = Status.Passed; // set status to Pass once user did a deposit withdrawal, so that it means user fully finished a bootcamp.
+        deposits[_depositor].status = _status; // based on the situation, manager will assign an appropriate status.
         deposits[_depositor].depositedAmount = 0;
         depositToken.transfer(_depositor, _amount);
         emit DepositWithdrawn(_depositor, _amount);
+    }
+
+    /**
+     * @dev Verifies that `_participant`  address is not a zero address.
+     * 
+     * @param _participant - address of the participant.
+     */
+    function _notAddressZero(address _participant) internal pure {
+        if (_participant == address(0)) {
+            revert DepositHandler__ParticipantAddressZero();
+        }
+    }
+
+    /**
+     * @dev Verifies that `_amount` requested for a withdraw equals original deposited USDC amount.
+     * 
+     * @param _amount - amount of USDC to withdaw.
+     * @param _participant - address of the participant.
+     */
+    function _checkWithdrawAmount(uint256 _amount, address _participant) internal view {
+        if (deposits[_participant].depositedAmount != _amount) {
+            revert DepositHandler__IncorrectAmountForWithdrawal(_amount);
+        }
     }
 
     /*//////////////////////////////////////////////////
                 ADMIN FUNCTIONS
     /////////////////////////////////////////////////*/
     /**
-     * @notice Allow a list of selected participants, who successfully finished a bootcamp,
-     * to withdraw their deposit from the bootcamp.
-     * @dev Set `Withdraw` status for all addresses in the `_participants` array.
-     * Faster way to set status for a a list of participants instead of calling on eby one.
+     * @notice Set a specific status for a batch of participants.
+     * Examples:
+     * 1. If manager want to allow participants to withdraw:
+     *  - Manager will call this function and assign a `Withdraw` status for all `_participants`.
+     * 2. If manager want to set participants who not passed a bootcam:
+     *  - Manager will call this function and assign a `NotPassed` status for all `_participants`.
+     * @dev Set `_status` for all addresses in the `_participants` array.
+     * Faster way to set status for a a list of participants instead of calling one by one.
      * Function restrictions:
      *  - Can only be called by `MANAGER` of this contract.
      *  - Can only be called when the bootcamp is finished.
      *  - `_participants` array can not be 0 length.
      * 
+     * @param _status - status to be set.
      * @param _participants - array of participants addresses.
      */
-    function allowWithdrawBatch(address[] calldata _participants) external whenFinished onlyRole(MANAGER) {
+    function updateStatusBatch(address[] calldata _participants, Status _status) external whenFinished onlyRole(MANAGER) {
         uint256 length = _participants.length;
         if (length == 0) {
             revert DepositHandler__ParticipantsArraySizeIsZero();
         }
         for (uint i = 0; i < length; i++) {
-            _setStatus(_participants[i], Status.Withdraw);
-        }
-    }
-
-    /**
-     * @notice Set `NotPassed` status for all participants who didn't finish a bootcamp successfully.
-     * These users won't receive their deposit back. 
-     * @dev Set `NotPassed` status for all `_participants` who didn't finsih successfully a bootcamp.
-     * Function restrictions:
-     *  - Can only be called by `MANAGER` of this contract.
-     *  - Can only be called when the bootcamp is finished.
-     *  - `_participants` array can not be 0 length. 
-     * 
-     * @param _participants - array of participants addresses.
-     */
-    function _setNotPassedParticipantBatch(address[] calldata _participants) external whenFinished onlyRole(MANAGER) {
-        uint256 length = _participants.length;
-        if (length == 0) {
-            revert DepositHandler__ParticipantsArraySizeIsZero();
-        }
-        for (uint i = 0; i < length; i++) {
-            _setStatus(_participants[i], Status.NotPassed);
+            _setStatus(_participants[i], _status);
         }
     }
 
@@ -205,10 +234,40 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * @param _status - status of the participant progress.
      */
     function _setStatus(address _participant, Status _status) internal onlyRole(MANAGER) {
-        if (_participant == address(0)) {
-            revert DepositHandler__ParticipantAddressZero();
-        }
+        _notAddressZero(_participant);
         deposits[_participant].status = _status;
+    }
+
+    /**
+     * @notice If user has an extra situation:
+     *  - accidentally deposited to this bootcamp.
+     *  - health problem.
+     *  - disagree with the graduation and deposit refunding.
+     *  - any other extra reason why user can't attend a bootcamp or why user skipped a bootcamp while deposited to it.
+     * then it is possible to talk to manager and if manager approve the situation, then an extra withdraw can be done 
+     * with a relevant status change for a user. 
+     * @dev Manager can do an extra withdrawal for `_participant` based on the provided circumstances.
+     * Function omits the next checks:
+     *  - No check whether the user has a `Withdraw` status.
+     *  - No check for the bootcamp finality.
+     * Function restrictions:
+     *  - Can only be called by `MANAGER` of this contract.
+     *  - Contract shouldn't be on Pause.
+     *
+     * @param _amount - deposited amoount for the bootcamp.
+     * @param _participant - address of the participant requesting extra withdraw.
+     * @param _status  - `Status` which admin should set for this participant, based on the situation.
+     */
+    function extraWithdraw(uint256 _amount, address _participant, Status _status) external onlyRole(MANAGER) {
+        _withdraw(_amount, _participant, _status);// based on the situation, manager will assign an appropriate status.
+    }
+
+    function approveEmergencyWithdraw() external onlyRole(MANAGER) {
+        allowEmergencyWithdraw = true;
+    }
+
+    function discardEmergencyWithdraw() external onlyRole(MANAGER) {
+        allowEmergencyWithdraw = false;
     }
 
     /**
