@@ -29,7 +29,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     mapping(address => depositInfo) public deposits;
 
     enum Status { // status of the bootcamp participant. 
-        Deposit, // participant allowed for deposit
         InProgress, // participant passing a bootcamp
         Withdraw, // praticipant allowed for withdraw
         Pass // bootcamp passed
@@ -102,7 +101,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * @param _amount - USDC amount.
      * @param _depositor - address of the bootcamp participant.
      */
-    function deposit(uint256 _amount, address _depositor) external whenNotPaused isAllowed(Status.Deposit) { 
+    function deposit(uint256 _amount, address _depositor) external whenNotPaused { 
         uint256 allowance = depositToken.allowance(_depositor, address(this));
         if (_amount != depositAmount) {
             revert DepositHandler__IncorrectDepositedAmount(_amount);
@@ -165,26 +164,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     }
 
     /**
-     * @notice Allow a list of selected participants, who passed interview stage, 
-     * to do a deposit to the bootcamp.
-     * @dev Set `Deposit` status for all addresses in the `_participants` array.
-     * Faster way to set status for a a list of participants instead of calling on eby one.
-     * Function restrictions:
-     *  - Can only be called by `MANAGER` of this contract.
-     * 
-     * @param _participants - array of participants addresses.
-     */
-    function allowDepositBatch(address[] calldata _participants) external onlyRole(MANAGER) {
-        uint256 length = _participants.length;
-        if (length == 0) {
-            revert DepositHandler__ParticipantsArraySizeIsZero();
-        }
-        for (uint i = 0; i < length; i++) {
-            _allowDeposit(_participants[i]);
-        }
-    }
-
-    /**
      * @notice Allow a list of selected participants, who successfully finished a bootcamp
      * to withdraw their deposit from the bootcamp.
      * @dev Set `Withdraw` status for all addresses in the `_participants` array.
@@ -203,21 +182,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         for (uint i = 0; i < length; i++) {
             _allowWithdraw(_participants[i]);
         }
-    }
-    
-    /**
-     * @dev Set `Deposit` status for the `_participant` address, so that `_participant` will be able
-     * to do a deposit.
-     * Function restrictions:
-     *  - Can only be called by `MANAGER` of this contract.
-     * 
-     * @param _participant - address of the user.
-     */
-    function _allowDeposit(address _participant) internal onlyRole(MANAGER) {
-        if (_participant == address(0)) {
-            revert DepositHandler__ParticipantAddressZero();
-        }
-        deposits[_participant].status = Status.Deposit;
     }
 
     /**
