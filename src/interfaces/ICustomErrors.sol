@@ -34,9 +34,16 @@ interface IDepositHandlerErrors {
     error DepositHandler__NotAllowedActionWithYourStatus();
 
     /**
-     * @dev Error indicates that 
+     * @dev Error indicates that manager tries to allow users to withdraw when the bootcamp 
+     * is not yet finished.
      */
     error DepositHandler__BootcampIsNotYetFinished();
+
+    /**
+     * @dev Error indicates that user trying to deposit funds for the bootcamp when
+     *  depositing stage is already closed.
+     */
+    error DepositHandler__DepositingStageAlreadyClosed();
 }
 
 /// Custom errors for BootcampFactory.sol
