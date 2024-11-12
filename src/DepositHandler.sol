@@ -7,10 +7,12 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
 /*
 1. Fuction to do a deposit for bootcamp. +
-2. Function to withdraw a deposit from bootcamp.
+2. Function to withdraw a deposit from bootcamp. +
 3. Pause function to pause a contract(only MANAGER).+
 4. Unpause function to unpause a contract(only MANAGER).+
-5. Function to get deposit information.
+5. Add deposit time to the bootcamp. +
+6. Add extra withdraw function.
+7. Add status for participants who not passed a bootcamp.
 */
 
 /**
@@ -22,6 +24,7 @@ import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
  */
 contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     bytes32 public constant MANAGER = keccak256("MANAGER");
+    uint256 public constant DEPOSIT_STAGE_DURATION = 2 days;
     uint256 public immutable depositAmount;
     uint256 public immutable bootcampDuration;
     uint256 public immutable bootcampStartTime;
@@ -29,9 +32,10 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     mapping(address => depositInfo) public deposits;
 
     enum Status { // status of the bootcamp participant. 
-        InProgress, // participant passing a bootcamp
-        Withdraw, // praticipant allowed for withdraw
-        Pass // bootcamp passed
+        InProgress, // participant passing a bootcamp.
+        Withdraw, // praticipant allowed for withdraw.
+        Passed, // bootcamp was passed successfully, and deposit will be returned.
+        NotPassed // bootcamp wasn't passed successfully, so that deposit won't be returned.
     }
     struct depositInfo {
         uint256 depositedAmount;
@@ -79,7 +83,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     {
         depositAmount = _depositAmount;
         depositToken = IERC20(_depositToken);
-        bootcampStartTime = block.timestamp;
+        bootcampStartTime = block.timestamp + DEPOSIT_STAGE_DURATION; // set 2 days from the bootcamp deployment for depositing.
         bootcampDuration = _bootcampDuration * 1 days;// duration value is converted to seconds.
         _grantRole(MANAGER, _manager);
     }
@@ -94,7 +98,9 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * the bootcamp. 
      * Function restrictions: 
      *  - Contract shouldn't be on Pause.
-     *  - Can only be called when user has a status `Deposit`.
+     *  - Can only be called during the `DEPOSIT_STAGE_DURATION` stage.
+     *  - `_amount` value should be the same as required in `depositAmount`.
+     *  - Caller should allow this contract to spend his USDC, before calling this function.
      * 
      * Emits a {DepositDone} event.
      * 
@@ -103,6 +109,9 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      */
     function deposit(uint256 _amount, address _depositor) external whenNotPaused { 
         uint256 allowance = depositToken.allowance(_depositor, address(this));
+        if (block.timestamp > bootcampStartTime) { // checking that user can do a deposit only during depositing stage
+            revert  DepositHandler__DepositingStageAlreadyClosed();
+        }
         if (_amount != depositAmount) {
             revert DepositHandler__IncorrectDepositedAmount(_amount);
         }
@@ -121,6 +130,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * Function restrictions: 
      *  - Contract shouldn't be on Pause.
      *  - Can only be called when user has a status `Withdraw`.
+     *  - `_amount` should be a correct value, which user originally deposited.
      * 
      * Emits a {DepositWithdrawn} event.
      * 
@@ -132,7 +142,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
             revert DepositHandler__IncorrectAmountForWithdrawal(_amount);
         }
         
-        deposits[_depositor].status = Status.Pass; // set status to Pass once user did a deposit withdrawal, so that it means user fully finished a bootcamp.
+        deposits[_depositor].status = Status.Passed; // set status to Pass once user did a deposit withdrawal, so that it means user fully finished a bootcamp.
         deposits[_depositor].depositedAmount = 0;
         depositToken.transfer(_depositor, _amount);
         emit DepositWithdrawn(_depositor, _amount);
@@ -141,6 +151,66 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     /*//////////////////////////////////////////////////
                 ADMIN FUNCTIONS
     /////////////////////////////////////////////////*/
+    /**
+     * @notice Allow a list of selected participants, who successfully finished a bootcamp,
+     * to withdraw their deposit from the bootcamp.
+     * @dev Set `Withdraw` status for all addresses in the `_participants` array.
+     * Faster way to set status for a a list of participants instead of calling on eby one.
+     * Function restrictions:
+     *  - Can only be called by `MANAGER` of this contract.
+     *  - Can only be called when the bootcamp is finished.
+     *  - `_participants` array can not be 0 length.
+     * 
+     * @param _participants - array of participants addresses.
+     */
+    function allowWithdrawBatch(address[] calldata _participants) external whenFinished onlyRole(MANAGER) {
+        uint256 length = _participants.length;
+        if (length == 0) {
+            revert DepositHandler__ParticipantsArraySizeIsZero();
+        }
+        for (uint i = 0; i < length; i++) {
+            _setStatus(_participants[i], Status.Withdraw);
+        }
+    }
+
+    /**
+     * @notice Set `NotPassed` status for all participants who didn't finish a bootcamp successfully.
+     * These users won't receive their deposit back. 
+     * @dev Set `NotPassed` status for all `_participants` who didn't finsih successfully a bootcamp.
+     * Function restrictions:
+     *  - Can only be called by `MANAGER` of this contract.
+     *  - Can only be called when the bootcamp is finished.
+     *  - `_participants` array can not be 0 length. 
+     * 
+     * @param _participants - array of participants addresses.
+     */
+    function _setNotPassedParticipantBatch(address[] calldata _participants) external whenFinished onlyRole(MANAGER) {
+        uint256 length = _participants.length;
+        if (length == 0) {
+            revert DepositHandler__ParticipantsArraySizeIsZero();
+        }
+        for (uint i = 0; i < length; i++) {
+            _setStatus(_participants[i], Status.NotPassed);
+        }
+    }
+
+    /**
+     * @notice Set participant status to track his progress during the bootcamp.
+     * @dev Set status from `Status` enum for specific bootcamp participant.
+     * Function restrictions:
+     *  - Can only be called by `MANAGER` of this contract.
+     *  - `_participant` address can't be address(0).
+     * 
+     * @param _participant - address of the bootcamp participant.
+     * @param _status - status of the participant progress.
+     */
+    function _setStatus(address _participant, Status _status) internal onlyRole(MANAGER) {
+        if (_participant == address(0)) {
+            revert DepositHandler__ParticipantAddressZero();
+        }
+        deposits[_participant].status = _status;
+    }
+
     /**
      * @notice Set contract on pause, and stop interraction with critical functions.
      * @dev Manager is able to put a contract on pause in case of vulnerability
@@ -161,41 +231,5 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      */
     function unpause() private onlyRole(MANAGER) {
         _unpause();
-    }
-
-    /**
-     * @notice Allow a list of selected participants, who successfully finished a bootcamp
-     * to withdraw their deposit from the bootcamp.
-     * @dev Set `Withdraw` status for all addresses in the `_participants` array.
-     * Faster way to set status for a a list of participants instead of calling on eby one.
-     * Function restrictions:
-     *  - Can only be called by `MANAGER` of this contract.
-     *  - Can only be called when the bootcamp is finished.
-     * 
-     * @param _participants - array of participants addresses.
-     */
-    function allowWithdrawBatch(address[] calldata _participants) external whenFinished onlyRole(MANAGER) {
-        uint256 length = _participants.length;
-        if (length == 0) {
-            revert DepositHandler__ParticipantsArraySizeIsZero();
-        }
-        for (uint i = 0; i < length; i++) {
-            _allowWithdraw(_participants[i]);
-        }
-    }
-
-    /**
-     * @dev Set `Withdraw` status for the `_participant` address, so that `_participant` will be able
-     * to do a withdraw a deposit.
-     * Function restrictions:
-     *  - Can only be called by `MANAGER` of this contract.
-     * 
-     * @param _participant - address of the user.
-     */
-    function _allowWithdraw(address _participant) internal onlyRole(MANAGER) {
-        if (_participant == address(0)) {
-            revert DepositHandler__ParticipantAddressZero();
-        }
-        deposits[_participant].status = Status.Withdraw;
     }
 }
