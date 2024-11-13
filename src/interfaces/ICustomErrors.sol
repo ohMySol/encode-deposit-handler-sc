@@ -73,4 +73,9 @@ interface IBootcampFactoryErrors {
      * @dev Error indicates that ADMIN tries to grant a role which doesn't exist.
      */
     error BootcampFactory__GrantNonExistentRole();
+
+    /**
+     * @dev Error indicates that manager trying to create a bootcamp instance a start time not in the future.
+     */
+    error BootcampFactory__InvalidBootcampStartTime();
 }
