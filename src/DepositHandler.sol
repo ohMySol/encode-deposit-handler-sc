@@ -24,7 +24,6 @@ import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
  */
 contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     bytes32 public constant MANAGER = keccak256("MANAGER");
-    uint256 public constant DEPOSIT_STAGE_DURATION = 2 days;
     uint256 public immutable depositAmount;
     uint256 public immutable bootcampDuration;
     uint256 public immutable bootcampStartTime;
@@ -52,7 +51,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     );
 
     /**
-     * @dev Checks if user has a required status to do a deposit/withdraw. 
+     * @dev Checks if user has a required status to do a withdraw. 
      */ 
     modifier isAllowed(Status _status) {
         Status status = deposits[msg.sender].status;
@@ -79,11 +78,13 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         uint256 _depositAmount, 
         address _depositToken, 
         address _manager, 
-        uint256 _bootcampDuration) 
+        uint256 _bootcampDuration,
+        uint256 _bootcampStartTime
+    ) 
     {
         depositAmount = _depositAmount;
         depositToken = IERC20(_depositToken);
-        bootcampStartTime = block.timestamp + DEPOSIT_STAGE_DURATION; // set 2 days from the bootcamp deployment for depositing.
+        bootcampStartTime = _bootcampStartTime;
         bootcampDuration = _bootcampDuration * 1 days;// duration value is converted to seconds.
         _grantRole(MANAGER, _manager);
     }
@@ -110,7 +111,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     function deposit(uint256 _amount, address _depositor) external whenNotPaused {
         _notAddressZero(_depositor);
         uint256 allowance = depositToken.allowance(_depositor, address(this));
-        if (block.timestamp > bootcampStartTime) { // checking that user can do a deposit only during depositing stage
+        if (block.timestamp > bootcampStartTime) { // checking that user can do a deposit only during depositing stage(before bootcamp starts)
             revert  DepositHandler__DepositingStageAlreadyClosed();
         }
         if (_amount != depositAmount) {
@@ -262,11 +263,11 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         _withdraw(_amount, _participant, _status);// based on the situation, manager will assign an appropriate status.
     }
 
-    function approveEmergencyWithdraw() external onlyRole(MANAGER) {
+    function approveEmergencyWithdraw() external whenNotPaused onlyRole(MANAGER) {
         allowEmergencyWithdraw = true;
     }
 
-    function discardEmergencyWithdraw() external onlyRole(MANAGER) {
+    function discardEmergencyWithdraw() external whenNotPaused onlyRole(MANAGER) {
         allowEmergencyWithdraw = false;
     }
 
