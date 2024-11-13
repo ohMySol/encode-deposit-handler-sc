@@ -31,10 +31,8 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         address bootcampAddress;
     }
     event BootcampCreated (
-        uint256 bootcampId,
-        uint256 depositAmount,
-        address depositToken,
-        address bootcampAddress
+        uint256 indexed bootcampId,
+        address indexed bootcampAddress
     );
         
     constructor() {
@@ -52,6 +50,10 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * bootcamp information in this instance: `_depositAmount` and `_depositToken`.
      * New bootcamp instance is stored in this factory contract in `bootcamp` mapping 
      * by unique id.
+     * Function restrictions:
+     *  - `_depositToken` address can not be address(0).
+     *  - `_bootcampStartTime` time should be a future time point.
+     *  - Can only be called by address with `MANAGER` role.
      * 
      * Emits a {BootcampCreated} event.
      * 
@@ -88,7 +90,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
             bootcampAddress: address(bootcamp)
         });
         
-        emit BootcampCreated(id, _depositAmount, _depositToken, address(bootcamp));
+        emit BootcampCreated(id, address(bootcamp));
     }
 
     /*//////////////////////////////////////////////////
@@ -98,6 +100,10 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * @notice Set a role to user.
      * @dev Set `MANAGER` or `ADMIN` role to `_account` address. Function restricred
      * to be called only by the `ADMIN` role.
+     * Function restrictions:
+     *  - Can only be called by address with `ADMIN` role.
+     *  - `_account` can not be address(0).
+     *  - `_role` can be only `MANAGER` or `ADMIN`.
      * 
      * @param _role - bytes32 respresentation of the role.
      * @param _account - address of the user that will have an new role.
@@ -118,6 +124,10 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * @notice Remove role from user.
      * @dev Remove `MANAGER` or `ADMIN` role from `_manager` address. Function restricred
      * to be called only by the `ADMIN` role.
+     * Function restrictions:
+     *  - Can only be called by address with `ADMIN` role.
+     *  - `_account` can not be address(0).
+     *  - `_role` can be only `MANAGER` or `ADMIN`.
      *
      * @param _role - bytes32 respresentation of the role. 
      * @param _account - address of the user that has a `MANAGER` role.
