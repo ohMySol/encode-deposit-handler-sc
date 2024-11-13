@@ -258,7 +258,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * @param _participant - address of the participant requesting extra withdraw.
      * @param _status  - `Status` which admin should set for this participant, based on the situation.
      */
-    function extraWithdraw(uint256 _amount, address _participant, Status _status) external onlyRole(MANAGER) {
+    function exceptionalWithdraw(uint256 _amount, address _participant, Status _status) external onlyRole(MANAGER) {
         _withdraw(_amount, _participant, _status);// based on the situation, manager will assign an appropriate status.
     }
 
