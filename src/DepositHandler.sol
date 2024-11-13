@@ -8,7 +8,7 @@ import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
 
 /**
  * @title Deposit Handler contract.
- * @author @ohMySol, @nynko, @ok567
+ * @author @ohMySol, @nynko, @ok567, @kubko
  * @dev Contract for managing users deposits for bootcamps.
  * Implements both user part and admin part for deposit management.
  * Apart from that contract allow to manage admins and bootcamps.
@@ -19,7 +19,8 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     uint256 public immutable bootcampDuration;
     uint256 public immutable bootcampStartTime;
     IERC20 public immutable depositToken;
-    bool allowEmergencyWithdraw;
+    address[] public emergencyWithdrawParticipants;
+    bool public allowEmergencyWithdraw;
     mapping(address => depositInfo) public deposits;
 
     enum Status { // status of the bootcamp participant. 
@@ -48,19 +49,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         Status status = deposits[msg.sender].status;
         if (status != _status) {
             revert DepositHandler__NotAllowedActionWithYourStatus();
-        }
-        _;
-    }
-
-    /**
-     * @dev Checks if user has a required status to do a deposit/withdraw.
-     * It is '<' instead of '<=', because I assume that encode team/manager need some time after
-     * the final day of the bootcamp to sum up all participants results. Like a day after a bootcamp users
-     * will be able to withdraw their deposits. 
-     */
-    modifier whenFinished {
-        if (block.timestamp < bootcampStartTime + bootcampDuration) {
-            revert DepositHandler__BootcampIsNotYetFinished();
         }
         _;
     }
@@ -114,6 +102,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
 
         deposits[_depositor].status = Status.InProgress; // set status to InProgress once user did a deposit, so that it means user is participating in bootcamp.
         deposits[_depositor].depositedAmount += _amount;
+        emergencyWithdrawParticipants.push(_depositor);
         depositToken.transferFrom(_depositor, address(this), _amount);
         emit DepositDone(_depositor, _amount);
     }
@@ -133,28 +122,30 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     }
 
     /**
-     * @notice Allow users to withdraw their deposits if some emergency situation appear.
+     * @notice Automatically withdraw users deposits back to them if some emergency situation appear.
      * Example of emergency situation:
      *  1. Manager set up incorrect(too long duration).
      *  2. Smth happens on Encode side.
-     * Which situation isn't a point to call this function:
-     *  1. If protocol was hacked this function can't be called, because in this scenario
-     * protocol will be on pause and all critical functions will be blocked for usage until
-     * problem will be resolved.
+     *  3. Stange activity mentioned in the contract.
      * @dev Allow to withdraw user funds if an emergency situation appear.
      * Function restrictions:
+     *  - Can only be called when contract is not on Pause.
      *  - Can only be called when `allowEmergencyWithdraw` is true.
+     *  - Can only be called by `MANAGER`.
      * Function omits the next checks:
      *  - No check whether the user has a `Withdraw` status.
-     *  - No check for the bootcamp finality.
-     * @param _amount - amount to withdraw.
-     * @param _depositor - address which will receive a deposit back.
      */
-    function emergencyWithdraw(uint256 _amount, address _depositor) external {
+    function emergencyWithdraw() external onlyRole(MANAGER) {
         if (!allowEmergencyWithdraw) {
             revert DepositHandler__EmergencyWithdrawIsNotApproved();
         }
-        _withdraw(_amount, _depositor, Status.Passed);
+        address[] memory participants = emergencyWithdrawParticipants;
+        uint256 length = participants.length;
+        uint256 amount = depositAmount;
+
+        for (uint256 i = 0; i < length; i++) {
+            _withdraw(amount, participants[i], Status.Passed);   
+        }
     }
 
     /**
@@ -217,13 +208,12 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * Faster way to set status for a a list of participants instead of calling one by one.
      * Function restrictions:
      *  - Can only be called by `MANAGER` of this contract.
-     *  - Can only be called when the bootcamp is finished.
      *  - `_participants` array can not be 0 length.
      * 
      * @param _status - status to be set.
      * @param _participants - array of participants addresses.
      */
-    function updateStatusBatch(address[] calldata _participants, Status _status) external whenFinished onlyRole(MANAGER) {
+    function updateStatusBatch(address[] calldata _participants, Status _status) external onlyRole(MANAGER) {
         uint256 length = _participants.length;
         if (length == 0) {
             revert DepositHandler__ParticipantsArraySizeIsZero();
@@ -274,6 +264,8 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
 
     /**
      * @dev Set `allowEmergencyWithdraw` flag to true, when emergency situation apper.
+     * Function restrictions:
+     *  - Can only be called when contract is not on Pause.
      */
     function approveEmergencyWithdraw() external whenNotPaused onlyRole(MANAGER) {
         allowEmergencyWithdraw = true;
@@ -281,6 +273,9 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
 
     /**
      * @dev Set `allowEmergencyWithdraw` flag to false, when emergency situation resolved.
+     * Function restrictions:
+     *  - Can only be called when contract is not on Pause.
+
      */
     function discardEmergencyWithdraw() external whenNotPaused onlyRole(MANAGER) {
         allowEmergencyWithdraw = false;

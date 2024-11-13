@@ -7,7 +7,7 @@ import {IBootcampFactoryErrors} from "./interfaces/ICustomErrors.sol";
 
 /**
  * @title Bootcamp Factory contract.
- * @author @ohMySol, @nynko, @ok567
+ * @author @ohMySol, @nynko, @ok567, @kubko
  * @notice Contract create new bootcamps.
  * @dev Contract for creation new instances of the `DepositHandler` contract with a Factory pattern. 
  * New instances are stored inside this factory contract and they can be quickly retrieved for the 
