@@ -5,15 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
-/*
-1. Fuction to do a deposit for bootcamp. +
-2. Function to withdraw a deposit from bootcamp. +
-3. Pause function to pause a contract(only MANAGER).+
-4. Unpause function to unpause a contract(only MANAGER).+
-5. Add deposit time to the bootcamp. +
-6. Add extra withdraw function.
-7. Add status for participants who not passed a bootcamp.+
-*/
 
 /**
  * @title Deposit Handler contract.
@@ -141,6 +132,24 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         _withdraw(_amount, _depositor, Status.Passed);
     }
 
+    /**
+     * @notice Allow users to withdraw their deposits if some emergency situation appear.
+     * Example of emergency situation:
+     *  1. Manager set up incorrect(too long duration).
+     *  2. Smth happens on Encode side.
+     * Which situation isn't a point to call this function:
+     *  1. If protocol was hacked this function can't be called, because in this scenario
+     * protocol will be on pause and all critical functions will be blocked for usage until
+     * problem will be resolved.
+     * @dev Allow to withdraw user funds if an emergency situation appear.
+     * Function restrictions:
+     *  - Can only be called when `allowEmergencyWithdraw` is true.
+     * Function omits the next checks:
+     *  - No check whether the user has a `Withdraw` status.
+     *  - No check for the bootcamp finality.
+     * @param _amount - amount to withdraw.
+     * @param _depositor - address which will receive a deposit back.
+     */
     function emergencyWithdraw(uint256 _amount, address _depositor) external {
         if (!allowEmergencyWithdraw) {
             revert DepositHandler__EmergencyWithdrawIsNotApproved();
@@ -263,10 +272,16 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         _withdraw(_amount, _participant, _status);// based on the situation, manager will assign an appropriate status.
     }
 
+    /**
+     * @dev Set `allowEmergencyWithdraw` flag to true, when emergency situation apper.
+     */
     function approveEmergencyWithdraw() external whenNotPaused onlyRole(MANAGER) {
         allowEmergencyWithdraw = true;
     }
 
+    /**
+     * @dev Set `allowEmergencyWithdraw` flag to false, when emergency situation resolved.
+     */
     function discardEmergencyWithdraw() external whenNotPaused onlyRole(MANAGER) {
         allowEmergencyWithdraw = false;
     }
