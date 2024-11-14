@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-/// Custom errors for DepositHandler.sol
+// Custom errors for DepositHandler.sol
 interface IDepositHandlerErrors {
     /**
      * @dev Error indicates that user tries to deposit an amount < `bootcampDeposit`.
@@ -51,7 +51,7 @@ interface IDepositHandlerErrors {
     error DepositHandler__EmergencyWithdrawIsNotApproved();
 }
 
-/// Custom errors for BootcampFactory.sol
+// Custom errors for BootcampFactory.sol
 interface IBootcampFactoryErrors {
     /**
      * @dev Error indicates that user tries to grant a role to `addres(0)`.
@@ -78,4 +78,12 @@ interface IBootcampFactoryErrors {
      * @dev Error indicates that manager trying to create a bootcamp instance a start time not in the future.
      */
     error BootcampFactory__InvalidBootcampStartTime();
+}
+
+// Custom errors for HelperConfig.sol 
+interface IHelperConfigErrors {
+    /**
+     * @dev Error indicates that user trying to deploy a contract to unsupported network.
+     */
+    error HelperConfig_NotSupportedChain();
 }
