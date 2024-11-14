@@ -16,7 +16,6 @@ import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
 contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     bytes32 public constant MANAGER = keccak256("MANAGER");
     uint256 public immutable depositAmount;
-    uint256 public immutable bootcampDuration;
     uint256 public immutable bootcampStartTime;
     IERC20 public immutable depositToken;
     address[] public emergencyWithdrawParticipants;
@@ -57,14 +56,12 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         uint256 _depositAmount, 
         address _depositToken, 
         address _manager, 
-        uint256 _bootcampDuration,
         uint256 _bootcampStartTime
     ) 
     {
         depositAmount = _depositAmount;
         depositToken = IERC20(_depositToken);
         bootcampStartTime = _bootcampStartTime;
-        bootcampDuration = _bootcampDuration * 1 days;// duration value is converted to seconds.
         _grantRole(MANAGER, _manager);
     }
 
