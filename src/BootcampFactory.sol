@@ -63,7 +63,6 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     function createBootcamp(
         uint256 _depositAmount, 
         address _depositToken, 
-        uint256 _bootcampDuration,
         uint256 _bootcampStartTime) 
         external onlyRole(MANAGER) 
     {
@@ -76,8 +75,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         DepositHandler bootcamp = new DepositHandler(
             _depositAmount, 
             _depositToken, 
-            msg.sender, 
-            _bootcampDuration,
+            msg.sender,
             _bootcampStartTime
         );
 
