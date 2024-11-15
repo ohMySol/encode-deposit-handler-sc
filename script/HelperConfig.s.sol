@@ -15,8 +15,9 @@ contract HelperConfig is Script, Constants, IHelperConfigErrors {
     struct NetworkConfig {
         address depositToken;
         uint256 depositAmount;
-        address manager;
         uint256 bootcampStartTime;
+        uint256 admin;
+        uint256 manager;
     }
 
     NetworkConfig public localNetworkConfig;
@@ -54,9 +55,11 @@ contract HelperConfig is Script, Constants, IHelperConfigErrors {
             localNetworkConfig = NetworkConfig({
                 depositToken: address(tokenMock),
                 depositAmount: 100,
-                manager: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // account from anvil list
-                bootcampStartTime: block.timestamp + 30 seconds
+                bootcampStartTime: block.timestamp + 30 seconds,
+                manager: vm.envUint("MANAGER_LOCAL_PK"), // pk from anvil list
+                admin: vm.envUint("ADMIN_LOCAL_PK") // pk from anvil list
             });
+            
             return localNetworkConfig;
         }
     }
