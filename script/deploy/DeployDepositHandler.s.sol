@@ -19,7 +19,7 @@ contract DeployDepositHandlerScript is Script{
         DepositHandler depositHandler = new DepositHandler(
             config.depositAmount,
             config.depositToken,
-            config.manager,
+            vm.addr(config.manager),
             config.bootcampStartTime
         );
         vm.stopBroadcast();
