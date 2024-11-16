@@ -108,12 +108,12 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      */
     function grantARole(bytes32 _role, address _account) external onlyRole(ADMIN) {
         if (_account == address(0)) {
-            revert BootcampFactory__CanNotGrantRoleToZeroAddress();
+            revert BootcampFactory__CanNotUpdateRoleForZeroAddress();
         }
         if (_role == ADMIN || _role == MANAGER) {
             _grantRole(_role, _account);
         } else {
-            revert BootcampFactory__GrantNonExistentRole();
+            revert BootcampFactory__UpdateNonExistentRole(_role);
         }
         
     }
@@ -132,12 +132,12 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      */
     function revokeARole(bytes32 _role, address _account) external onlyRole(ADMIN) {
         if (_account == address(0)) {
-            revert BootcampFactory__CanNotRevokeRoleFromZeroAddress();
+            revert BootcampFactory__CanNotUpdateRoleForZeroAddress();
         }
         if (_role == ADMIN || _role == MANAGER) {
             _revokeRole(_role, _account);
         } else {
-            revert BootcampFactory__GrantNonExistentRole();
+            revert BootcampFactory__UpdateNonExistentRole(_role);
         }
     }
 }
