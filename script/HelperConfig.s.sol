@@ -55,7 +55,7 @@ contract HelperConfig is Script, Constants, IHelperConfigErrors {
             localNetworkConfig = NetworkConfig({
                 depositToken: address(tokenMock),
                 depositAmount: 100,
-                bootcampStartTime: block.timestamp + 30 seconds,
+                bootcampStartTime: block.timestamp + 10 minutes,
                 manager: vm.envUint("MANAGER_LOCAL_PK"), // pk from anvil list
                 admin: vm.envUint("ADMIN_LOCAL_PK") // pk from anvil list
             });
@@ -67,6 +67,6 @@ contract HelperConfig is Script, Constants, IHelperConfigErrors {
     function getAmoyNetworkConfig() public returns(NetworkConfig memory) {
     }
 
-    function getSepoliaNetworkConfig() public returns(NetworkConfig memory) {
+    function getTenderlyForkMainnet() public returns(NetworkConfig memory) {
     }
 }
