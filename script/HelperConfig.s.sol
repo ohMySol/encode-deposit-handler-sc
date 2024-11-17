@@ -6,8 +6,8 @@ import {DepositTokenMock} from "../test/mocks/DepositTokenMock.sol";
 import {IHelperConfigErrors} from "../src/interfaces/ICustomErrors.sol";
 
 abstract contract Constants {
-    uint256 public constant ETH_SEPOLIA_CHAIN_ID = 11155111;
     uint256 public constant POL_AMOY_CHAIN_ID = 80002;
+    uint256 public constant POL_MAINNET_FORK_CHAIN_ID = 112233;
     uint256 public constant LOCAL_CHAIN_ID = 31337;
 }
 
@@ -21,6 +21,7 @@ contract HelperConfig is Script, Constants, IHelperConfigErrors {
     }
 
     NetworkConfig public localNetworkConfig;
+    NetworkConfig public polygonMainnetFork;
 
     mapping (uint256 chainId => NetworkConfig) public networkConfigs;
 
@@ -64,9 +65,7 @@ contract HelperConfig is Script, Constants, IHelperConfigErrors {
         }
     }
 
-    function getAmoyNetworkConfig() public returns(NetworkConfig memory) {
-    }
+    function getPolygonMainnetForkNetworkConfig() public returns(NetworkConfig memory) {}
 
-    function getTenderlyForkMainnet() public returns(NetworkConfig memory) {
-    }
+    function getPolygonAmoyNetworkConfig() public returns(NetworkConfig memory) {}
 }
