@@ -285,7 +285,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * Function restrictions:
      *  - Can only be called by `MANAGER` of this contract.
      */
-    function pause() private onlyRole(MANAGER) {
+    function pause() public onlyRole(MANAGER) {
         _pause();
     }
 
@@ -296,7 +296,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * Function restrictions:
      *  - Can only be called by `MANAGER` of this contract.
      */
-    function unpause() private onlyRole(MANAGER) {
+    function unpause() public onlyRole(MANAGER) {
         _unpause();
     }
 }
