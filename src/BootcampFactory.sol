@@ -106,7 +106,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * @param _role - bytes32 respresentation of the role.
      * @param _account - address of the user that will have an new role.
      */
-    function grantARole(bytes32 _role, address _account) external onlyRole(ADMIN) {
+    function grantRole(bytes32 _role, address _account) public override onlyRole(ADMIN) {
         if (_account == address(0)) {
             revert BootcampFactory__CanNotUpdateRoleForZeroAddress();
         }
@@ -130,7 +130,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * @param _role - bytes32 respresentation of the role. 
      * @param _account - address of the user that has a `MANAGER` role.
      */
-    function revokeARole(bytes32 _role, address _account) external onlyRole(ADMIN) {
+    function revokeRole(bytes32 _role, address _account) public override onlyRole(ADMIN) {
         if (_account == address(0)) {
             revert BootcampFactory__CanNotUpdateRoleForZeroAddress();
         }
