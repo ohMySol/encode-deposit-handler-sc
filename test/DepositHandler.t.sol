@@ -1,52 +1,53 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "forge-std/Test.sol";  
-import "../src/DepositHandler.sol"; 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol"; //used to create a mock USDC token for testing
+import {Test, console} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {DeployDepositHandlerScript} from "../script/deploy/DeployDepositHandler.s.sol";
+import {IDepositHandlerErrors} from "../src/interfaces/ICustomErrors.sol";
+import {DepositHandler} from "../src/DepositHandler.sol"; 
+import {HelperConfig} from "../script/HelperConfig.s.sol";
 
+contract BootcampFactoryTest is Test {
+    bytes32 public constant MANAGER = keccak256("MANAGER");
+    bytes32 public constant INVALID_ROLE = bytes32("AVENGER");
+    DepositHandler public bootcamp;
+    HelperConfig public helperConfig;
+    HelperConfig.NetworkConfig networkConfig;
+    
+    address public manager;
+    address public alice;
 
-contract MockUSDC is ERC20{ //mock token that simulates an ERC20 token
-    constructor() ERC20("Mock USDC", "mUSDC"){
-        _mint(msg.sender, 1000e18); //mint a 1000 ether
-    }
-}
-
-
-contract DepositHandlerTest is Test {
-    /* DepositHandler public depositHandler; //instance of the DepositHandler contract that is being tested
-    MockUSDC public usdcToken;  // mock token for simulating deposits
-    address user = address(1);  // simulated user address
-    address admin = address(this); // admin is the contract deployer for testing
-
+    event DepositDone(
+        address depositor,
+        uint256 depositAmount
+    );
+    event DepositWithdrawn(
+        address depositor,
+        uint256 withdrawAmount
+    );
 
     function setUp() public {
-    usdcToken = new MockUSDC(); // Deploy the mock USDC token
-    depositHandler = new DepositHandler(address(usdcToken)); // Deploy the DepositHandler contract
-}
-
-    function testInitialSetup() public {
-        assertEq(depositHandler.admin(), admin, "Admin should be the contract deployer");
-        assertEq(address(depositHandler.usdcToken()), address(usdcToken), "USDC token address should be correct");
+        DeployDepositHandlerScript deployer = new DeployDepositHandlerScript();
+        (bootcamp, helperConfig) = deployer.deploy(); // receive instances from deploy script based on the network
+        networkConfig = helperConfig.getConfigByChainId(block.chainid);
+        
+        manager = vm.addr(networkConfig.manager); // manager who depployed a bootcamp contract
+        alice = makeAddr(("alice")); // some other user without MANAGER role.
     }
-    function testDeposit() public {
-    uint256 depositAmount = 250e18; // 250 USDC in token decimals
-    usdcToken.transfer(user, depositAmount); // Mint mock USDC to user
-
-    // Start simulating actions from the user's perspective
-    vm.startPrank(user); 
-    usdcToken.approve(address(depositHandler), depositAmount); // Approve the contract to spend the user's USDC
-    depositHandler.deposit(depositAmount); // Call the deposit function
-
-    // Destructure the tuple to access the depositedAmount
-    (uint256 depositedAmount,,,) = depositHandler.userDepositInfo(user);
-
-    // Assert that the deposit was successfully recorded
-    assertEq(depositedAmount, depositAmount, "User deposit should be recorded in the struct");
-
-    // Stop simulating the user
-    vm.stopPrank(); 
-} */
 
 
+
+    /*//////////////////////////////////////////////////
+                INITIALIZATION TESTS
+    /////////////////////////////////////////////////*/
+    function test_DepositHandlerContractInitializedWithCorrectValues() public {
+        console.log(manager);
+        assertTrue(bootcamp.hasRole(MANAGER, manager));
+        assertEq(bootcamp.depositAmount(), networkConfig.depositAmount);
+        assertEq(address(bootcamp.depositToken()), networkConfig.depositToken);
+        assertEq(bootcamp.bootcampStartTime(), networkConfig.bootcampStartTime);
+    }
+    
 }
