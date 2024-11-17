@@ -3,6 +3,7 @@ src = "src"
 out = "out"
 test = 'test'
 libs = ["lib"]
+gas_reports = ["BootcampFactory", "DepositHandler"]
 
 remappings = [
     'openzeppelin/=lib/openzeppelin-contracts/',
