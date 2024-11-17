@@ -3,8 +3,9 @@ src = "src"
 out = "out"
 test = 'test'
 libs = ["lib"]
+gas_reports = ["BootcampFactory", "DepositHandler"]
 
 remappings = [
-    '@openzeppelin/=lib/openzeppelin-contracts/',
-    '@forge-std/=lib/forge-std'
+    'openzeppelin/=lib/openzeppelin-contracts/',
+    'forge-std/=lib/forge-std/src'
 ]

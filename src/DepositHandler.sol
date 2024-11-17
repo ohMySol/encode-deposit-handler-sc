@@ -16,11 +16,9 @@ import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
 contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     bytes32 public constant MANAGER = keccak256("MANAGER");
     uint256 public immutable depositAmount;
-    uint256 public immutable bootcampDuration;
     uint256 public immutable bootcampStartTime;
     IERC20 public immutable depositToken;
     address[] public emergencyWithdrawParticipants;
-    bool public allowEmergencyWithdraw;
     mapping(address => depositInfo) public deposits;
 
     enum Status { // status of the bootcamp participant. 
@@ -57,14 +55,12 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         uint256 _depositAmount, 
         address _depositToken, 
         address _manager, 
-        uint256 _bootcampDuration,
         uint256 _bootcampStartTime
     ) 
     {
         depositAmount = _depositAmount;
         depositToken = IERC20(_depositToken);
         bootcampStartTime = _bootcampStartTime;
-        bootcampDuration = _bootcampDuration * 1 days;// duration value is converted to seconds.
         _grantRole(MANAGER, _manager);
     }
 
@@ -123,6 +119,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
 
     /**
      * @notice Automatically withdraw users deposits back to them if some emergency situation appear.
+     * Everyone who participated in the bootcamp will receive their deposit back in case of emergency.
      * Example of emergency situation:
      *  1. Manager set up incorrect(too long duration).
      *  2. Smth happens on Encode side.
@@ -136,9 +133,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      *  - No check whether the user has a `Withdraw` status.
      */
     function emergencyWithdraw() external onlyRole(MANAGER) {
-        if (!allowEmergencyWithdraw) {
-            revert DepositHandler__EmergencyWithdrawIsNotApproved();
-        }
         address[] memory participants = emergencyWithdrawParticipants;
         uint256 length = participants.length;
         uint256 amount = depositAmount;
@@ -263,32 +257,13 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     }
 
     /**
-     * @dev Set `allowEmergencyWithdraw` flag to true, when emergency situation apper.
-     * Function restrictions:
-     *  - Can only be called when contract is not on Pause.
-     */
-    function approveEmergencyWithdraw() external whenNotPaused onlyRole(MANAGER) {
-        allowEmergencyWithdraw = true;
-    }
-
-    /**
-     * @dev Set `allowEmergencyWithdraw` flag to false, when emergency situation resolved.
-     * Function restrictions:
-     *  - Can only be called when contract is not on Pause.
-
-     */
-    function discardEmergencyWithdraw() external whenNotPaused onlyRole(MANAGER) {
-        allowEmergencyWithdraw = false;
-    }
-
-    /**
      * @notice Set contract on pause, and stop interraction with critical functions.
      * @dev Manager is able to put a contract on pause in case of vulnerability
      * or any other problem. Functions using `whenNotPaused()` modifier won't work.
      * Function restrictions:
      *  - Can only be called by `MANAGER` of this contract.
      */
-    function pause() private onlyRole(MANAGER) {
+    function pause() public onlyRole(MANAGER) {
         _pause();
     }
 
@@ -299,7 +274,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * Function restrictions:
      *  - Can only be called by `MANAGER` of this contract.
      */
-    function unpause() private onlyRole(MANAGER) {
+    function unpause() public onlyRole(MANAGER) {
         _unpause();
     }
 }

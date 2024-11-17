@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-/// Custom errors for DepositHandler.sol
+// Custom errors for DepositHandler.sol
 interface IDepositHandlerErrors {
     /**
      * @dev Error indicates that user tries to deposit an amount < `bootcampDeposit`.
@@ -44,24 +44,14 @@ interface IDepositHandlerErrors {
      *  depositing stage is already closed.
      */
     error DepositHandler__DepositingStageAlreadyClosed();
-
-    /**
-     * @dev Error indicates that user trying to withdraw his deposit when emergency approval is not true.
-     */
-    error DepositHandler__EmergencyWithdrawIsNotApproved();
 }
 
-/// Custom errors for BootcampFactory.sol
+// Custom errors for BootcampFactory.sol
 interface IBootcampFactoryErrors {
     /**
-     * @dev Error indicates that user tries to grant a role to `addres(0)`.
+     * @dev Error indicates that user tries to grant/revoke a role to/from `addres(0)`.
      */
-    error BootcampFactory__CanNotGrantRoleToZeroAddress();
-
-    /**
-     * @dev Error indicates that user tries to revoke a role from `addres(0)`.
-     */
-    error BootcampFactory__CanNotRevokeRoleFromZeroAddress();
+    error BootcampFactory__CanNotUpdateRoleForZeroAddress();
 
     /**
      * @dev Error indicates that user tries to create a new bootcamp instance
@@ -70,12 +60,20 @@ interface IBootcampFactoryErrors {
     error BootcampFactory__DepositTokenCanNotBeZeroAddress();
 
      /**
-     * @dev Error indicates that ADMIN tries to grant a role which doesn't exist.
+     * @dev Error indicates that admin tries to grant/revoke a role which doesn't exist.
      */
-    error BootcampFactory__GrantNonExistentRole();
+    error BootcampFactory__UpdateNonExistentRole(bytes32 role);
 
     /**
-     * @dev Error indicates that manager trying to create a bootcamp instance a start time not in the future.
+     * @dev Error indicates that manager creating a bootcamp instance with a start time not in the future.
      */
     error BootcampFactory__InvalidBootcampStartTime();
+}
+
+// Custom errors for HelperConfig.sol 
+interface IHelperConfigErrors {
+    /**
+     * @dev Error indicates that user trying to deploy a contract to unsupported network.
+     */
+    error HelperConfig_NotSupportedChain();
 }

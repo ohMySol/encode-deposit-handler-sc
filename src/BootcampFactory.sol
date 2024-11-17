@@ -63,7 +63,6 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     function createBootcamp(
         uint256 _depositAmount, 
         address _depositToken, 
-        uint256 _bootcampDuration,
         uint256 _bootcampStartTime) 
         external onlyRole(MANAGER) 
     {
@@ -76,8 +75,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         DepositHandler bootcamp = new DepositHandler(
             _depositAmount, 
             _depositToken, 
-            msg.sender, 
-            _bootcampDuration,
+            msg.sender,
             _bootcampStartTime
         );
 
@@ -108,14 +106,14 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * @param _role - bytes32 respresentation of the role.
      * @param _account - address of the user that will have an new role.
      */
-    function grantARole(bytes32 _role, address _account) external onlyRole(ADMIN) {
+    function grantRole(bytes32 _role, address _account) public override onlyRole(ADMIN) {
         if (_account == address(0)) {
-            revert BootcampFactory__CanNotGrantRoleToZeroAddress();
+            revert BootcampFactory__CanNotUpdateRoleForZeroAddress();
         }
         if (_role == ADMIN || _role == MANAGER) {
             _grantRole(_role, _account);
         } else {
-            revert BootcampFactory__GrantNonExistentRole();
+            revert BootcampFactory__UpdateNonExistentRole(_role);
         }
         
     }
@@ -132,14 +130,14 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * @param _role - bytes32 respresentation of the role. 
      * @param _account - address of the user that has a `MANAGER` role.
      */
-    function revokeARole(bytes32 _role, address _account) external onlyRole(ADMIN) {
+    function revokeRole(bytes32 _role, address _account) public override onlyRole(ADMIN) {
         if (_account == address(0)) {
-            revert BootcampFactory__CanNotRevokeRoleFromZeroAddress();
+            revert BootcampFactory__CanNotUpdateRoleForZeroAddress();
         }
         if (_role == ADMIN || _role == MANAGER) {
             _revokeRole(_role, _account);
         } else {
-            revert BootcampFactory__GrantNonExistentRole();
+            revert BootcampFactory__UpdateNonExistentRole(_role);
         }
     }
 }
