@@ -19,7 +19,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     uint256 public immutable bootcampStartTime;
     IERC20 public immutable depositToken;
     address[] public emergencyWithdrawParticipants;
-    bool public allowEmergencyWithdraw;
     mapping(address => depositInfo) public deposits;
 
     enum Status { // status of the bootcamp participant. 
@@ -120,6 +119,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
 
     /**
      * @notice Automatically withdraw users deposits back to them if some emergency situation appear.
+     * Everyone who participated in the bootcamp will receive their deposit back in case of emergency.
      * Example of emergency situation:
      *  1. Manager set up incorrect(too long duration).
      *  2. Smth happens on Encode side.
@@ -133,9 +133,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      *  - No check whether the user has a `Withdraw` status.
      */
     function emergencyWithdraw() external onlyRole(MANAGER) {
-        if (!allowEmergencyWithdraw) {
-            revert DepositHandler__EmergencyWithdrawIsNotApproved();
-        }
         address[] memory participants = emergencyWithdrawParticipants;
         uint256 length = participants.length;
         uint256 amount = depositAmount;
@@ -257,25 +254,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      */
     function exceptionalWithdraw(uint256 _amount, address _participant, Status _status) external onlyRole(MANAGER) {
         _withdraw(_amount, _participant, _status);// based on the situation, manager will assign an appropriate status.
-    }
-
-    /**
-     * @dev Set `allowEmergencyWithdraw` flag to true, when emergency situation apper.
-     * Function restrictions:
-     *  - Can only be called when contract is not on Pause.
-     */
-    function approveEmergencyWithdraw() external whenNotPaused onlyRole(MANAGER) {
-        allowEmergencyWithdraw = true;
-    }
-
-    /**
-     * @dev Set `allowEmergencyWithdraw` flag to false, when emergency situation resolved.
-     * Function restrictions:
-     *  - Can only be called when contract is not on Pause.
-
-     */
-    function discardEmergencyWithdraw() external whenNotPaused onlyRole(MANAGER) {
-        allowEmergencyWithdraw = false;
     }
 
     /**

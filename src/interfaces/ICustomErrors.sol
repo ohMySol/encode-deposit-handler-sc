@@ -44,11 +44,6 @@ interface IDepositHandlerErrors {
      *  depositing stage is already closed.
      */
     error DepositHandler__DepositingStageAlreadyClosed();
-
-    /**
-     * @dev Error indicates that user trying to withdraw his deposit when emergency approval is not true.
-     */
-    error DepositHandler__EmergencyWithdrawIsNotApproved();
 }
 
 // Custom errors for BootcampFactory.sol
