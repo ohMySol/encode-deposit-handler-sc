@@ -61,7 +61,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         uint256 _depositAmount, 
         address _depositToken, 
         uint256 _bootcampStartTime) 
-        external onlyRole(MANAGER) 
+        external onlyRole(MANAGER) returns(address)
     {
         if (_depositToken == address(0)) {
             revert BootcampFactory__DepositTokenCanNotBeZeroAddress();
@@ -83,6 +83,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         });
         
         emit BootcampCreated(address(bootcamp));
+        return address(bootcamp);
     }
 
     /*//////////////////////////////////////////////////
