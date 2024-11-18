@@ -154,40 +154,37 @@ contract BootcampFactoryTest is Test {
     /////////////////////////////////////////////////*/
     function test_ManagerSuccessfullyCreateNewBootcamp() public adminGrantManagerRole {
         vm.startPrank(manager);
-        factory.createBootcamp(
+        address _bootcampAddress = factory.createBootcamp(
             networkConfig.depositAmount,
             networkConfig.depositToken,
             networkConfig.bootcampStartTime
         );
-        uint256 bootcampId = factory.totalBootcampAmount();
+        
         (
-            uint256 id, 
             uint256 depositAmount, 
             address depositToken, 
             address bootcampAddress
-        ) = factory.bootcamps(bootcampId);
+        ) = factory.bootcamps(_bootcampAddress);
         
-        assertEq(id, 1);
+       
         assertEq(depositAmount, networkConfig.depositAmount);
         assertEq(depositToken, networkConfig.depositToken);
-        assertTrue(bootcampAddress != address(0));
+        assertEq(bootcampAddress, _bootcampAddress);
     }
 
     function test_EventIsEmittedOnceBootcampIsCreated() public adminGrantManagerRole {
         vm.startPrank(manager);
         // recording data from events
         vm.recordLogs();
-        factory.createBootcamp(
+        address _bootcamAddress = factory.createBootcamp(
             networkConfig.depositAmount,
             networkConfig.depositToken,
             networkConfig.bootcampStartTime
         );
         Vm.Log[] memory logs = vm.getRecordedLogs(); // receive all the recorded logs
-        uint256 bootcampId = uint256(logs[1].topics[1]);
-        address bootcampAddress = address(uint160(uint256(logs[1].topics[2])));
+        address bootcampAddress = address(uint160(uint256(logs[1].topics[1])));
         
-        assertEq(bootcampId, 1);
-        assertEq(bootcampAddress, 0xa16E02E87b7454126E5E10d957A927A7F5B5d2be);
+        assertEq(bootcampAddress, _bootcamAddress);
     }
 
     function test_OnlyManagerCanCreateNewBootcamp() public adminGrantManagerRole {
