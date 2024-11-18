@@ -21,17 +21,14 @@ import {IBootcampFactoryErrors} from "./interfaces/ICustomErrors.sol";
 contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     bytes32 public constant ADMIN = keccak256("ADMIN"); // Main Role
     bytes32 public constant MANAGER = keccak256("MANAGER"); // 2nd Roles
-    uint256 public totalBootcampAmount;
-    mapping (uint256 => Bootcamp) public bootcamps;
+    mapping (address => Bootcamp) public bootcamps;
 
     struct Bootcamp {
-        uint256 id;
         uint256 depositAmount;
         address depositToken;
         address bootcampAddress;
     }
     event BootcampCreated (
-        uint256 indexed bootcampId,
         address indexed bootcampAddress
     );
         
@@ -49,7 +46,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * @dev Create a new `DepositHandler` contract instance and set up a required 
      * bootcamp information in this instance: `_depositAmount` and `_depositToken`.
      * New bootcamp instance is stored in this factory contract in `bootcamp` mapping 
-     * by unique id.
+     * by unique bootcamp address.
      * Function restrictions:
      *  - `_depositToken` address can not be address(0).
      *  - `_bootcampStartTime` time should be a future time point.
@@ -79,16 +76,13 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
             _bootcampStartTime
         );
 
-        totalBootcampAmount++;
-        uint256 id = totalBootcampAmount; // store storage var-l locally
-        bootcamps[id] = Bootcamp({
-            id: id,
+        bootcamps[address(bootcamp)] = Bootcamp({
             depositAmount: _depositAmount,
             depositToken: _depositToken,
             bootcampAddress: address(bootcamp)
         });
         
-        emit BootcampCreated(id, address(bootcamp));
+        emit BootcampCreated(address(bootcamp));
     }
 
     /*//////////////////////////////////////////////////
