@@ -16,7 +16,9 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     bytes32 public constant MANAGER = keccak256("MANAGER");
     uint256 public immutable depositAmount;
     uint256 public immutable bootcampStartTime;
+    uint256 public immutable withdrawDuration;
     IERC20 public immutable depositToken;
+    uint256 public bootcampFinishTime;
     address[] public emergencyWithdrawParticipants;
     mapping(address => depositInfo) public deposits;
 
@@ -56,13 +58,19 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         uint256 _depositAmount, 
         address _depositToken, 
         address _manager, 
-        uint256 _bootcampStartTime
+        uint256 _bootcampStartTime,
+        uint256 _withdrawDuration
     ) 
     {
         depositAmount = _depositAmount;
         depositToken = IERC20(_depositToken);
         bootcampStartTime = _bootcampStartTime;
+        withdrawDuration = _withdrawDuration;
         _grantRole(MANAGER, _manager);
+    }
+
+    function factoryWithdrawAdmin() external returns (uint256) {
+        
     }
 
     /*//////////////////////////////////////////////////
@@ -113,11 +121,13 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * Function restrictions: 
      *  - Contract shouldn't be on Pause.
      *  - Can only be called when user has a status `Withdraw`.
+     *  - Can only be called when `bootcampWithdrawTime` is not elapsed.
      * 
      * @param _amount - USDC amount.
      * @param _depositor - address of the participant.
      */
     function withdraw(uint256 _amount, address _depositor) external isAllowed(Status.Withdraw) {
+        _isWithdrawStageFinished();
         _withdraw(_amount, _depositor, Status.Passed);
     }
 
@@ -196,8 +206,17 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         }
     }
 
+    /**
+     * @dev Verifies whether a withdraw stage is already finished, or not.
+     */
+    function _isWithdrawStageFinished() internal view {
+        if (bootcampFinishTime + withdrawDuration > block.timestamp) {
+            revert DepositHandler__WithdrawStageAlreadyClosed();
+        }
+    }
+
     /*//////////////////////////////////////////////////
-                ADMIN FUNCTIONS
+                MANAGER FUNCTIONS
     /////////////////////////////////////////////////*/
     /**
      * @notice Set a specific status for a batch of participants.
@@ -220,8 +239,11 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         if (length == 0) {
             revert DepositHandler__ParticipantsArraySizeIsZero();
         }
+        if (_status == Status.Withdraw) {
+            bootcampFinishTime = block.timestamp; // assume when manager set a Withdraw status to users, this means bootcamp is already finished
+        }
         for (uint i = 0; i < length; i++) {
-            if (_status == Status.Withdraw && deposits[_participants[i]].depositDonation) { // if manager is assigning a withdraw statuses then additinal check is if this is a donater. If it is, then we won't assign to him a Withdraw status and he won't be able to withdraw.
+            if (_status == Status.Withdraw && deposits[_participants[i]].depositDonation) { // if user is a donater, then we won't assign him a Withdraw status and he won't be able to withdraw.
                 continue;
             }
             _setStatus(_participants[i], _status);
