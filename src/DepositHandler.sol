@@ -78,7 +78,8 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     }
 
     /**
-     * @dev Admin from `BootcampFactory` contract is able to withdraw money from the bootcamp
+     * @notice Admin is able to withdraw tokens after bootcamp completion.
+     * @dev Admin from `BootcampFactory` contract is able to withdraw tokens from the bootcamp
      * contract.
      * Function restrictions:
      *  - Can only be called by `BootcampFactory` contract.
@@ -103,7 +104,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
             revert DepositHandler__IncorrectAmountForWithdrawal(_amount);
         } 
         
-        depositToken.transfer(_admin, _amount);
+        SafeERC20.safeTransfer(depositToken, _admin, _amount);
 
         return remainingBalance;
     }
@@ -112,7 +113,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
                 USER FUNCTIONS
     /////////////////////////////////////////////////*/
     /**
-     * @dev Set `depositDonation` option to true in `depositInfo` for specific user.
+     * @dev Set `depositDonation` flag to true in `depositInfo` for specific user.
      * Function restrictions:
      *  - Can only be called by a participant of the bootcamp.
      */
