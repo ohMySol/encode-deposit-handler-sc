@@ -17,6 +17,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     bytes32 public constant MANAGER = keccak256("MANAGER");
     uint256 public immutable depositAmount;
     uint256 public immutable bootcampStartTime;
+    uint256 public immutable bootcampDeadline;
     uint256 public immutable withdrawDuration;
     IERC20 public immutable depositToken;
     address public immutable factory;
@@ -63,6 +64,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         address _depositToken, 
         address _manager, 
         uint256 _bootcampStartTime,
+        uint256 _bootcampDeadline,
         uint256 _withdrawDuration,
         address _factory,
         string memory _bootcampName
@@ -71,6 +73,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         depositAmount = _depositAmount;
         depositToken = IERC20(_depositToken);
         bootcampStartTime = _bootcampStartTime;
+        bootcampDeadline = _bootcampDeadline;
         withdrawDuration = _withdrawDuration;
         factory = _factory;
         bootcampName = _bootcampName;
@@ -259,7 +262,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * @dev Verifies whether a withdraw stage is already finished, or not.
      */
     function _isWithdrawStageFinished() internal view {
-        if (bootcampFinishTime + withdrawDuration > block.timestamp) {
+        if (bootcampDeadline + withdrawDuration > block.timestamp) {
             revert DepositHandler__WithdrawStageAlreadyClosed();
         }
     }
@@ -287,9 +290,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         uint256 length = _participants.length;
         if (length == 0) {
             revert DepositHandler__ParticipantsArraySizeIsZero();
-        }
-        if (_status == Status.Withdraw) {
-            bootcampFinishTime = block.timestamp; // assume when manager set a Withdraw status to users, this means bootcamp is already finished
         }
         for (uint i = 0; i < length; i++) {
             if (_status == Status.Withdraw && deposits[_participants[i]].depositDonation) { // if user is a donater, then we won't assign him a Withdraw status and he won't be able to withdraw.
