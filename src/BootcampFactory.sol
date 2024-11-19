@@ -66,6 +66,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         uint256 _depositAmount, 
         address _depositToken, 
         uint256 _bootcampStartTime,
+        uint256 _bootcampDeadline,
         uint256 _withdrawDuration,
         string memory _bootcampName
     )      
@@ -74,14 +75,15 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         if (_depositToken == address(0)) {
             revert BootcampFactory__DepositTokenCanNotBeZeroAddress();
         }
-        if (_bootcampStartTime <= block.timestamp) {
-            revert BootcampFactory__InvalidBootcampStartTime();
+        if (_bootcampStartTime <= block.timestamp || _bootcampDeadline <= _bootcampStartTime) {
+            revert BootcampFactory__InvalidBootcampStartOrDedlineTime();
         }
         DepositHandler bootcamp = new DepositHandler(
             _depositAmount, 
             _depositToken, 
             msg.sender,
             _bootcampStartTime,
+            _bootcampDeadline,
             _withdrawDuration,
             address(this),
             _bootcampName
