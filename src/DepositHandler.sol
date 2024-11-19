@@ -22,7 +22,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     IERC20 public immutable depositToken;
     address public immutable factory;
     string public bootcampName;
-    uint256 public bootcampFinishTime;
     address[] public emergencyWithdrawParticipants;
     mapping(address => depositInfo) public deposits;
     mapping(address => bool) public isParticipant;
