@@ -47,7 +47,7 @@ contract BootcampFactoryTest is Test {
         assertTrue(bootcamp.hasRole(MANAGER, manager));
         assertEq(bootcamp.depositAmount(), networkConfig.depositAmount);
         assertEq(address(bootcamp.depositToken()), networkConfig.depositToken);
-        assertEq(bootcamp.bootcampStartTime(), networkConfig.bootcampStartTime);
+        assertEq(bootcamp.bootcampStart(), networkConfig.bootcampStart);
     }
     
 }
