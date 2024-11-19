@@ -23,6 +23,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     uint256 public bootcampFinishTime;
     address[] public emergencyWithdrawParticipants;
     mapping(address => depositInfo) public deposits;
+    mapping(address => bool) public isParticipant;
 
     enum Status { // status of the bootcamp participant. 
         InProgress, // participant passing a bootcamp.
@@ -83,13 +84,14 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      *  - Bootcamp should be finished and withdraw stage already closed.
      *  - `_admin` can not be address(0)
      *  - `_amount` should be <= balance of this contract.
+     *  - contract shouldn't be on Pause.
      * 
      * @param _admin - admin who will receive a tokens.
      * @param _amount - amount of tokens.
      * 
      * @return - `remainingBalance` of this bootcamp contract.
      */
-    function withdrawAdmin(address _admin, uint256 _amount) external returns(uint256) {
+    function withdrawAdmin(address _admin, uint256 _amount) external whenNotPaused returns(uint256) {
         _isWithdrawStageFinished();
         if (msg.sender != factory) {
             revert DepositHandler__CallerNotAFactoryContract();
@@ -109,6 +111,19 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
                 USER FUNCTIONS
     /////////////////////////////////////////////////*/
     /**
+     * @dev Set `depositDonation` option to true in `depositInfo` for specific user.
+     * Function restrictions:
+     *  - Can only be called by a participant of the bootcamp.
+     */
+    function donate() external whenNotPaused {
+        if(!isParticipant[msg.sender]) {
+            revert DepositHandler__CallerNotParticipant();
+        }
+
+        deposits[msg.sender].depositDonation = true;
+    }
+
+    /**
      * @notice Do deposit of USDC into this contract.
      * @dev Allow `_depositor` to deposit USDC '_amount' for a bootcamp. Deposited amount will be 
      * locked inside this contract till the end ofthe bootcamp, except emergency situation or extra situation, 
@@ -123,9 +138,8 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * 
      * @param _amount - USDC amount.
      * @param _depositor - address of the bootcamp participant.
-     * @param _donateDeposit - boolean parameter represent wilingness of the user to donate his deposit.
      */
-    function deposit(uint256 _amount, address _depositor, bool _donateDeposit) external whenNotPaused {
+    function deposit(uint256 _amount, address _depositor) external whenNotPaused {
         _notAddressZero(_depositor);
         uint256 allowance = depositToken.allowance(_depositor, address(this));
         if (block.timestamp > bootcampStartTime) { // checking that user can do a deposit only during depositing stage(before bootcamp starts)
@@ -140,10 +154,10 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         
         deposits[_depositor].depositedAmount += _amount;
         deposits[_depositor].status = Status.InProgress; // set status to InProgress once user did a deposit, so that it means user is participating in bootcamp.
-        deposits[_depositor].depositDonation = _donateDeposit;
+        isParticipant[_depositor] = true;
         emergencyWithdrawParticipants.push(_depositor);
         depositToken.transferFrom(_depositor, address(this), _amount);
-        
+
         emit DepositDone(_depositor, _amount);
     }
 
@@ -210,6 +224,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         
         deposits[_depositor].status = _status; // based on the situation, manager will assign an appropriate status.
         deposits[_depositor].depositedAmount = 0;
+        isParticipant[_depositor] = false; // once withdraw user no longer a participant
         depositToken.transfer(_depositor, _amount);
         
         emit DepositWithdrawn(_depositor, _amount);
