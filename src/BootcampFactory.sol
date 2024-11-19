@@ -24,9 +24,12 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     mapping (address => Bootcamp) public bootcamps;
 
     struct Bootcamp {
+        string bootcampName;
+        address bootcampAddress;
         uint256 depositAmount;
         address depositToken;
-        address bootcampAddress;
+        uint256 bootcampStartTime;
+        uint256 bootcampDealine;
     }
     event BootcampCreated (
         address indexed bootcampAddress
@@ -90,9 +93,12 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         );
 
         bootcamps[address(bootcamp)] = Bootcamp({
+            bootcampName: _bootcampName,
+            bootcampAddress: address(bootcamp),
             depositAmount: _depositAmount,
             depositToken: _depositToken,
-            bootcampAddress: address(bootcamp)
+            bootcampStartTime: _bootcampStartTime,
+            bootcampDealine: _bootcampDeadline
         });
         
         emit BootcampCreated(address(bootcamp));
