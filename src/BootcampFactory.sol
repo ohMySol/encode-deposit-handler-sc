@@ -21,16 +21,9 @@ import {IBootcampFactoryErrors} from "./interfaces/ICustomErrors.sol";
 contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     bytes32 public constant ADMIN = keccak256("ADMIN"); // Main Role
     bytes32 public constant MANAGER = keccak256("MANAGER"); // 2nd Roles
-    mapping (address => Bootcamp) public bootcamps;
+    mapping (address => bool) public isBootcamp;
 
-    struct Bootcamp {
-        string bootcampName;
-        address bootcampAddress;
-        uint256 depositAmount;
-        address depositToken;
-        uint256 bootcampStart;
-        uint256 bootcampDealine;
-    }
+    
     event BootcampCreated (
         address indexed bootcampAddress
     );
@@ -90,14 +83,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
                 _bootcampName
             );
     
-            bootcamps[address(bootcamp)] = Bootcamp({
-                bootcampName: _bootcampName,
-                bootcampAddress: address(bootcamp),
-                depositAmount: _depositAmount,
-                depositToken: _depositToken,
-                bootcampStart: _bootcampStart,
-                bootcampDealine: _bootcampDeadline
-            });
+            isBootcamp[address(bootcamp)] = true;
 
             emit BootcampCreated(address(bootcamp));
             return address(bootcamp);
@@ -168,12 +154,11 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * @param _bootcamp  - address of the bootcamp from which admin will withdraw.
      */
     function withdrawProfit(uint256 _amount, address _bootcamp) external onlyRole(ADMIN) {
-        address bootcampAddress = bootcamps[_bootcamp].bootcampAddress;
-        if (_bootcamp == address(0) || bootcampAddress == address(0)) {
+        if (_bootcamp == address(0) || isBootcamp[_bootcamp]) {
             revert BootcampFactory__InvalidBootcampAddress();
         }
         
-        uint256 remainingBalance = DepositHandler(bootcampAddress).withdrawAdmin(msg.sender, _amount);
+        uint256 remainingBalance = DepositHandler(_bootcamp).withdrawAdmin(msg.sender, _amount);
 
         emit AdminFundsWithdrawn(msg.sender, _amount, remainingBalance);
     }
