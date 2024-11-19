@@ -18,6 +18,8 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     uint256 public immutable bootcampStartTime;
     uint256 public immutable withdrawDuration;
     IERC20 public immutable depositToken;
+    address public immutable factory;
+    string public bootcampName;
     uint256 public bootcampFinishTime;
     address[] public emergencyWithdrawParticipants;
     mapping(address => depositInfo) public deposits;
@@ -59,18 +61,48 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         address _depositToken, 
         address _manager, 
         uint256 _bootcampStartTime,
-        uint256 _withdrawDuration
+        uint256 _withdrawDuration,
+        address _factory,
+        string memory _bootcampName
     ) 
     {
         depositAmount = _depositAmount;
         depositToken = IERC20(_depositToken);
         bootcampStartTime = _bootcampStartTime;
         withdrawDuration = _withdrawDuration;
+        factory = _factory;
+        bootcampName = _bootcampName;
         _grantRole(MANAGER, _manager);
     }
 
-    function factoryWithdrawAdmin() external returns (uint256) {
+    /**
+     * @dev Admin from `BootcampFactory` contract is able to withdraw money from the bootcamp
+     * contract.
+     * Function restrictions:
+     *  - Can only be called by `BootcampFactory` contract.
+     *  - Bootcamp should be finished and withdraw stage already closed.
+     *  - `_admin` can not be address(0)
+     *  - `_amount` should be <= balance of this contract.
+     * 
+     * @param _admin - admin who will receive a tokens.
+     * @param _amount - amount of tokens.
+     * 
+     * @return - `remainingBalance` of this bootcamp contract.
+     */
+    function withdrawAdmin(address _admin, uint256 _amount) external returns(uint256) {
+        _isWithdrawStageFinished();
+        if (msg.sender != factory) {
+            revert DepositHandler__CallerNotAFactoryContract();
+        }
+        uint256 _balance = depositToken.balanceOf(address(this));
+        uint256 remainingBalance = _balance - _amount;
+        if (_amount > _balance) {
+            revert DepositHandler__IncorrectAmountForWithdrawal(_amount);
+        } 
         
+        depositToken.transfer(_admin, _amount);
+
+        return remainingBalance;
     }
 
     /*//////////////////////////////////////////////////
@@ -184,13 +216,13 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     }
 
     /**
-     * @dev Verifies that `_participant`  address is not a zero address.
+     * @dev Verifies that `_user`  address is not a zero address.
      * 
-     * @param _participant - address of the participant.
+     * @param _user - address of the user.
      */
-    function _notAddressZero(address _participant) internal pure {
-        if (_participant == address(0)) {
-            revert DepositHandler__ParticipantAddressZero();
+    function _notAddressZero(address _user) internal pure {
+        if (_user == address(0)) {
+            revert DepositHandler__UserAddressCanNotBeZero();
         }
     }
 
