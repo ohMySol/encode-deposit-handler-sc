@@ -28,7 +28,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         address bootcampAddress;
         uint256 depositAmount;
         address depositToken;
-        uint256 bootcampStartTime;
+        uint256 bootcampStart;
         uint256 bootcampDealine;
     }
     event BootcampCreated (
@@ -57,7 +57,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * by unique bootcamp address.
      * Function restrictions:
      *  - `_depositToken` address can not be address(0).
-     *  - `_bootcampStartTime` time should be a future time point.
+     *  - `_bootcampStart` time should be a future time point.
      *  - Can only be called by address with `MANAGER` role.
      * 
      * Emits a {BootcampCreated} event.
@@ -68,7 +68,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     function createBootcamp(
         uint256 _depositAmount, 
         address _depositToken, 
-        uint256 _bootcampStartTime,
+        uint256 _bootcampStart,
         uint256 _bootcampDeadline,
         uint256 _withdrawDuration,
         string memory _bootcampName
@@ -78,31 +78,32 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         if (_depositToken == address(0)) {
             revert BootcampFactory__DepositTokenCanNotBeZeroAddress();
         }
-        if (_bootcampStartTime <= block.timestamp || _bootcampDeadline <= _bootcampStartTime) {
+        if (_bootcampStart > block.timestamp && _bootcampDeadline > _bootcampStart) { // bootcampStart should be in the future to have time for depositing, and deadline obviously should be > start time
+            DepositHandler bootcamp = new DepositHandler(
+                _depositAmount, 
+                _depositToken, 
+                msg.sender,
+                _bootcampStart,
+                _bootcampDeadline,
+                _withdrawDuration,
+                address(this),
+                _bootcampName
+            );
+    
+            bootcamps[address(bootcamp)] = Bootcamp({
+                bootcampName: _bootcampName,
+                bootcampAddress: address(bootcamp),
+                depositAmount: _depositAmount,
+                depositToken: _depositToken,
+                bootcampStart: _bootcampStart,
+                bootcampDealine: _bootcampDeadline
+            });
+
+            emit BootcampCreated(address(bootcamp));
+            return address(bootcamp);
+        } else {
             revert BootcampFactory__InvalidBootcampStartOrDedlineTime();
         }
-        DepositHandler bootcamp = new DepositHandler(
-            _depositAmount, 
-            _depositToken, 
-            msg.sender,
-            _bootcampStartTime,
-            _bootcampDeadline,
-            _withdrawDuration,
-            address(this),
-            _bootcampName
-        );
-
-        bootcamps[address(bootcamp)] = Bootcamp({
-            bootcampName: _bootcampName,
-            bootcampAddress: address(bootcamp),
-            depositAmount: _depositAmount,
-            depositToken: _depositToken,
-            bootcampStartTime: _bootcampStartTime,
-            bootcampDealine: _bootcampDeadline
-        });
-        
-        emit BootcampCreated(address(bootcamp));
-        return address(bootcamp);
     }
 
     /*//////////////////////////////////////////////////
