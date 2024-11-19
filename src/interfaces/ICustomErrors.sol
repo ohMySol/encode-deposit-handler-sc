@@ -55,6 +55,11 @@ interface IDepositHandlerErrors {
      * @dev Error indicates not a factory contract is trying to call this function.
      */
     error DepositHandler__CallerNotAFactoryContract();
+
+    /**
+     * @dev Error indicates that user is not a participant.
+     */
+    error DepositHandler__CallerNotParticipant();
 }
 
 // Custom errors for BootcampFactory.sol
