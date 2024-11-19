@@ -19,9 +19,9 @@ interface IDepositHandlerErrors {
     error DepositHandler__IncorrectAmountForWithdrawal(uint256 _withdrawAmount);
 
     /**
-     * @dev Error indicates that manager tries to change a state of the contract for `address(0)`.
+     * @dev Error indicates that someone set parameter `address(0)`.
      */
-    error DepositHandler__ParticipantAddressZero();
+    error DepositHandler__UserAddressCanNotBeZero();
 
     /**
      * @dev Error indicates that manager calls a function with zero size array.
@@ -79,6 +79,11 @@ interface IBootcampFactoryErrors {
      * @dev Error indicates that manager creating a bootcamp instance with a start time not in the future.
      */
     error BootcampFactory__InvalidBootcampStartTime();
+
+    /**
+     * @dev Error indicates that admin trying to withdraw money from non existent bootcamp.
+     */
+    error BootcampFactory__InvalidBootcampAddress();
 }
 
 // Custom errors for HelperConfig.sol 
