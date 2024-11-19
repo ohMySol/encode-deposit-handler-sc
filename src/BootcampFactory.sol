@@ -31,6 +31,11 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     event BootcampCreated (
         address indexed bootcampAddress
     );
+    event AdminFundsWithdrawn(
+        address indexed admin, 
+        uint256 withdrawnAmount,
+        uint256 remainedBalance
+    );
         
     constructor() {
         _grantRole(ADMIN, msg.sender); // Grant the deployer the admin role
@@ -61,7 +66,8 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         uint256 _depositAmount, 
         address _depositToken, 
         uint256 _bootcampStartTime,
-        uint256 _withdrawDuration
+        uint256 _withdrawDuration,
+        string memory _bootcampName
     )      
         external onlyRole(MANAGER) returns(address)
     {
@@ -76,7 +82,9 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
             _depositToken, 
             msg.sender,
             _bootcampStartTime,
-            _withdrawDuration
+            _withdrawDuration,
+            address(this),
+            _bootcampName
         );
 
         bootcamps[address(bootcamp)] = Bootcamp({
@@ -137,5 +145,27 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         } else {
             revert BootcampFactory__UpdateNonExistentRole(_role);
         }
+    }
+
+    /**
+     * @notice Admin can withdraw deposits of 'not passed' or 'donaters' users from specific bootcamp.
+     * @dev Admin is able to withdraw funds from the bootcamp contract which is already finished.
+     * Function restrictions:
+     *  - Only `ADMIN` can call this function.
+     *  - `_bootcamp` parameter shouldn't be address(0)
+     *  - `bootcampAddress` should be an address of existing bootcamp.
+     * 
+     * @param _amount - amount to withdraw from the `DepositHandler`(bootcamp) contract. 
+     * @param _bootcamp  - address of the bootcamp from which admin will withdraw.
+     */
+    function withdrawProfit(uint256 _amount, address _bootcamp) external onlyRole(ADMIN) {
+        address bootcampAddress = bootcamps[_bootcamp].bootcampAddress;
+        if (_bootcamp == address(0) || bootcampAddress == address(0)) {
+            revert BootcampFactory__InvalidBootcampAddress();
+        }
+        
+        uint256 remainingBalance = DepositHandler(bootcampAddress).withdrawAdmin(msg.sender, _amount);
+
+        emit AdminFundsWithdrawn(msg.sender, _amount, remainingBalance);
     }
 }

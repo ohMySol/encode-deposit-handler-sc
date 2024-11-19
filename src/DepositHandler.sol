@@ -19,9 +19,12 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     uint256 public immutable bootcampStartTime;
     uint256 public immutable withdrawDuration;
     IERC20 public immutable depositToken;
+    address public immutable factory;
+    string public bootcampName;
     uint256 public bootcampFinishTime;
     address[] public emergencyWithdrawParticipants;
     mapping(address => depositInfo) public deposits;
+    mapping(address => bool) public isParticipant;
 
     enum Status { // status of the bootcamp participant. 
         InProgress, // participant passing a bootcamp.
@@ -60,23 +63,67 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         address _depositToken, 
         address _manager, 
         uint256 _bootcampStartTime,
-        uint256 _withdrawDuration
+        uint256 _withdrawDuration,
+        address _factory,
+        string memory _bootcampName
     ) 
     {
         depositAmount = _depositAmount;
         depositToken = IERC20(_depositToken);
         bootcampStartTime = _bootcampStartTime;
         withdrawDuration = _withdrawDuration;
+        factory = _factory;
+        bootcampName = _bootcampName;
         _grantRole(MANAGER, _manager);
     }
 
-    function factoryWithdrawAdmin() external returns (uint256) {
+    /**
+     * @dev Admin from `BootcampFactory` contract is able to withdraw money from the bootcamp
+     * contract.
+     * Function restrictions:
+     *  - Can only be called by `BootcampFactory` contract.
+     *  - Bootcamp should be finished and withdraw stage already closed.
+     *  - `_admin` can not be address(0)
+     *  - `_amount` should be <= balance of this contract.
+     *  - contract shouldn't be on Pause.
+     * 
+     * @param _admin - admin who will receive a tokens.
+     * @param _amount - amount of tokens.
+     * 
+     * @return - `remainingBalance` of this bootcamp contract.
+     */
+    function withdrawAdmin(address _admin, uint256 _amount) external whenNotPaused returns(uint256) {
+        _isWithdrawStageFinished();
+        if (msg.sender != factory) {
+            revert DepositHandler__CallerNotAFactoryContract();
+        }
+        uint256 _balance = depositToken.balanceOf(address(this));
+        uint256 remainingBalance = _balance - _amount;
+        if (_amount > _balance) {
+            revert DepositHandler__IncorrectAmountForWithdrawal(_amount);
+        } 
         
+        depositToken.transfer(_admin, _amount);
+
+        return remainingBalance;
     }
 
     /*//////////////////////////////////////////////////
                 USER FUNCTIONS
     /////////////////////////////////////////////////*/
+    /**
+     * @dev Set `depositDonation` option to true in `depositInfo` for specific user.
+     * Function restrictions:
+     *  - Can only be called by a participant of the bootcamp.
+     */
+    function donate() external whenNotPaused {
+        if(!isParticipant[msg.sender]) {
+            revert DepositHandler__CallerNotParticipant();
+        }
+
+        deposits[msg.sender].depositDonation = true;
+    }
+
     /**
      * @notice Do deposit of USDC into this contract.
      * @dev Allow `_depositor` to deposit USDC '_amount' for a bootcamp. Deposited amount will be 
@@ -92,9 +139,8 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * 
      * @param _amount - USDC amount.
      * @param _depositor - address of the bootcamp participant.
-     * @param _donateDeposit - boolean parameter represent wilingness of the user to donate his deposit.
      */
-    function deposit(uint256 _amount, address _depositor, bool _donateDeposit) external whenNotPaused {
+    function deposit(uint256 _amount, address _depositor) external whenNotPaused {
         _notAddressZero(_depositor);
         uint256 allowance = depositToken.allowance(_depositor, address(this));
         if (block.timestamp > bootcampStartTime) { // checking that user can do a deposit only during depositing stage(before bootcamp starts)
@@ -109,7 +155,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         
         deposits[_depositor].depositedAmount += _amount;
         deposits[_depositor].status = Status.InProgress; // set status to InProgress once user did a deposit, so that it means user is participating in bootcamp.
-        deposits[_depositor].depositDonation = _donateDeposit;
+        isParticipant[_depositor] = true;
         emergencyWithdrawParticipants.push(_depositor);
         SafeERC20.safeTransferFrom(depositToken, _depositor, address(this), _amount);
         
@@ -179,19 +225,20 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         
         deposits[_depositor].status = _status; // based on the situation, manager will assign an appropriate status.
         deposits[_depositor].depositedAmount = 0;
+        isParticipant[_depositor] = false; // once withdraw user no longer a participant
         SafeERC20.safeTransfer(depositToken, _depositor, _amount);
         
         emit DepositWithdrawn(_depositor, _amount);
     }
 
     /**
-     * @dev Verifies that `_participant`  address is not a zero address.
+     * @dev Verifies that `_user`  address is not a zero address.
      * 
-     * @param _participant - address of the participant.
+     * @param _user - address of the user.
      */
-    function _notAddressZero(address _participant) internal pure {
-        if (_participant == address(0)) {
-            revert DepositHandler__ParticipantAddressZero();
+    function _notAddressZero(address _user) internal pure {
+        if (_user == address(0)) {
+            revert DepositHandler__UserAddressCanNotBeZero();
         }
     }
 
