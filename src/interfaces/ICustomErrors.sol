@@ -81,9 +81,10 @@ interface IBootcampFactoryErrors {
     error BootcampFactory__UpdateNonExistentRole(bytes32 role);
 
     /**
-     * @dev Error indicates that manager creating a bootcamp instance with a start time not in the future.
+     * @dev Error indicates that manager creating a bootcamp instance with a start time not in the future,
+     * or deadline which is <= start time.
      */
-    error BootcampFactory__InvalidBootcampStartTime();
+    error BootcampFactory__InvalidBootcampStartOrDedlineTime();
 
     /**
      * @dev Error indicates that admin trying to withdraw money from non existent bootcamp.
