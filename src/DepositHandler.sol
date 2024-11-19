@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import {IDepositHandlerErrors} from "./interfaces/ICustomErrors.sol";
@@ -156,8 +157,8 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         deposits[_depositor].status = Status.InProgress; // set status to InProgress once user did a deposit, so that it means user is participating in bootcamp.
         isParticipant[_depositor] = true;
         emergencyWithdrawParticipants.push(_depositor);
-        depositToken.transferFrom(_depositor, address(this), _amount);
-
+        SafeERC20.safeTransferFrom(depositToken, _depositor, address(this), _amount);
+        
         emit DepositDone(_depositor, _amount);
     }
 
@@ -225,7 +226,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         deposits[_depositor].status = _status; // based on the situation, manager will assign an appropriate status.
         deposits[_depositor].depositedAmount = 0;
         isParticipant[_depositor] = false; // once withdraw user no longer a participant
-        depositToken.transfer(_depositor, _amount);
+        SafeERC20.safeTransfer(depositToken, _depositor, _amount);
         
         emit DepositWithdrawn(_depositor, _amount);
     }
