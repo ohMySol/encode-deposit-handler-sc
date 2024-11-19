@@ -50,6 +50,11 @@ interface IDepositHandlerErrors {
      *  withdraw stage is already closed.
      */
     error DepositHandler__WithdrawStageAlreadyClosed();
+
+    /**
+     * @dev Error indicates not a factory contract is trying to call this function.
+     */
+    error DepositHandler__CallerNotAFactoryContract();
 }
 
 // Custom errors for BootcampFactory.sol
