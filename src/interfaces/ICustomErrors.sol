@@ -6,7 +6,7 @@ interface IDepositHandlerErrors {
     /**
      * @dev Error indicates that user tries to deposit an amount < `bootcampDeposit`.
      */
-    error DepositHandler__IncorrectDepositedAmount(uint256 _actualAmount);
+    error DepositHandler__IncorrectDepositedAmount(uint256 _actualAmount, uint256 expectedAmount);
 
     /**
      * @dev Error indicates that user didn't allow contract to spent enough tokens.
