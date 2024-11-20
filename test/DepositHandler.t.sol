@@ -43,11 +43,14 @@ contract BootcampFactoryTest is Test {
                 INITIALIZATION TESTS
     /////////////////////////////////////////////////*/
     function test_DepositHandlerContractInitializedWithCorrectValues() public {
-        console.log(manager);
         assertTrue(bootcamp.hasRole(MANAGER, manager));
         assertEq(bootcamp.depositAmount(), networkConfig.depositAmount);
         assertEq(address(bootcamp.depositToken()), networkConfig.depositToken);
         assertEq(bootcamp.bootcampStart(), networkConfig.bootcampStart);
+        assertEq(bootcamp.bootcampName(), networkConfig.bootcampName);
+        assertEq(bootcamp.bootcampDeadline(), networkConfig.bootcampDeadline);
+        assertEq(bootcamp.withdrawDuration(), networkConfig.withdrawDuration);
+        assertEq(bootcamp.factory(), networkConfig.factory);
     }
     
 }
