@@ -96,16 +96,18 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * @return - `remainingBalance` of this bootcamp contract.
      */
     function withdrawAdmin(address _admin, uint256 _amount) external whenNotPaused returns(uint256) {
-        _isWithdrawStageFinished();
         if (msg.sender != factory) {
             revert DepositHandler__CallerNotAFactoryContract();
         }
+        if (!_checkWitdrawStageFinished()) {
+            revert DepositHandler__WithdrawStageNotClosed();
+        }
         uint256 _balance = depositToken.balanceOf(address(this));
-        uint256 remainingBalance = _balance - _amount;
         if (_amount > _balance) {
             revert DepositHandler__IncorrectAmountForWithdrawal(_amount);
         } 
         
+        uint256 remainingBalance = _balance - _amount;
         SafeERC20.safeTransfer(depositToken, _admin, _amount);
 
         return remainingBalance;
@@ -177,7 +179,9 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * @param _depositor - address of the participant.
      */
     function withdraw(uint256 _amount, address _depositor) external isAllowed(Status.Withdraw) {
-        _isWithdrawStageFinished();
+        if (_checkWitdrawStageFinished()) {
+            revert DepositHandler__WithdrawStageAlreadyClosed();
+        }
         _withdraw(_amount, _depositor, Status.Passed);
     }
 
@@ -258,12 +262,10 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     }
 
     /**
-     * @dev Verifies whether a withdraw stage is already finished, or not.
+     * @dev Returns a boolean whether a withdraw stage is already finished, or not.
      */
-    function _isWithdrawStageFinished() internal view {
-        if (bootcampDeadline + withdrawDuration > block.timestamp) {
-            revert DepositHandler__WithdrawStageAlreadyClosed();
-        }
+    function _checkWitdrawStageFinished() internal view returns (bool) {
+        return block.timestamp > (bootcampDeadline + withdrawDuration);
     }
 
     /*//////////////////////////////////////////////////
