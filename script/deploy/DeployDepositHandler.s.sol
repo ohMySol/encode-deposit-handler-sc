@@ -23,7 +23,7 @@ contract DeployDepositHandlerScript is Script{
             config.bootcampStart,
             config.bootcampDeadline,
             config.withdrawDuration,
-            address(0),
+            config.factory,
             config.bootcampName
         );
         vm.stopBroadcast();
