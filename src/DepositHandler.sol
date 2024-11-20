@@ -150,7 +150,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
             revert  DepositHandler__DepositingStageAlreadyClosed();
         }
         if (_amount != depositAmount) {
-            revert DepositHandler__IncorrectDepositedAmount(_amount);
+            revert DepositHandler__IncorrectDepositedAmount(_amount, depositAmount);
         }
         if (allowance < _amount) {
             revert DepositHandler__ApprovedAmountLessThanDeposit(allowance);
