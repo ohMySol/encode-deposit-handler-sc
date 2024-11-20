@@ -21,18 +21,16 @@ import {IBootcampFactoryErrors} from "./interfaces/ICustomErrors.sol";
 contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     bytes32 public constant ADMIN = keccak256("ADMIN"); // Main Role
     bytes32 public constant MANAGER = keccak256("MANAGER"); // 2nd Roles
-    uint256 public totalBootcampAmount;
-    mapping (uint256 => Bootcamp) public bootcamps;
+    mapping (address => bool) public isBootcamp;
 
-    struct Bootcamp {
-        uint256 id;
-        uint256 depositAmount;
-        address depositToken;
-        address bootcampAddress;
-    }
+    
     event BootcampCreated (
-        uint256 indexed bootcampId,
         address indexed bootcampAddress
+    );
+    event AdminFundsWithdrawn(
+        address indexed admin, 
+        uint256 withdrawnAmount,
+        uint256 remainedBalance
     );
         
     constructor() {
@@ -49,10 +47,10 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * @dev Create a new `DepositHandler` contract instance and set up a required 
      * bootcamp information in this instance: `_depositAmount` and `_depositToken`.
      * New bootcamp instance is stored in this factory contract in `bootcamp` mapping 
-     * by unique id.
+     * by unique bootcamp address.
      * Function restrictions:
      *  - `_depositToken` address can not be address(0).
-     *  - `_bootcampStartTime` time should be a future time point.
+     *  - `_bootcampStart` time should be a future time point.
      *  - Can only be called by address with `MANAGER` role.
      * 
      * Emits a {BootcampCreated} event.
@@ -63,32 +61,35 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     function createBootcamp(
         uint256 _depositAmount, 
         address _depositToken, 
-        uint256 _bootcampStartTime) 
-        external onlyRole(MANAGER) 
+        uint256 _bootcampStart,
+        uint256 _bootcampDeadline,
+        uint256 _withdrawDuration,
+        string memory _bootcampName
+    )      
+        external onlyRole(MANAGER) returns(address)
     {
         if (_depositToken == address(0)) {
             revert BootcampFactory__DepositTokenCanNotBeZeroAddress();
         }
-        if (_bootcampStartTime <= block.timestamp) {
-            revert BootcampFactory__InvalidBootcampStartTime();
-        }
-        DepositHandler bootcamp = new DepositHandler(
-            _depositAmount, 
-            _depositToken, 
-            msg.sender,
-            _bootcampStartTime
-        );
+        if (_bootcampStart > block.timestamp && _bootcampDeadline > _bootcampStart) { // bootcampStart should be in the future to have time for depositing, and deadline obviously should be > start time
+            DepositHandler bootcamp = new DepositHandler(
+                _depositAmount, 
+                _depositToken, 
+                msg.sender,
+                _bootcampStart,
+                _bootcampDeadline,
+                _withdrawDuration,
+                address(this),
+                _bootcampName
+            );
+    
+            isBootcamp[address(bootcamp)] = true;
 
-        totalBootcampAmount++;
-        uint256 id = totalBootcampAmount; // store storage var-l locally
-        bootcamps[id] = Bootcamp({
-            id: id,
-            depositAmount: _depositAmount,
-            depositToken: _depositToken,
-            bootcampAddress: address(bootcamp)
-        });
-        
-        emit BootcampCreated(id, address(bootcamp));
+            emit BootcampCreated(address(bootcamp));
+            return address(bootcamp);
+        } else {
+            revert BootcampFactory__InvalidBootcampStartOrDedlineTime();
+        }
     }
 
     /*//////////////////////////////////////////////////
@@ -139,5 +140,26 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
         } else {
             revert BootcampFactory__UpdateNonExistentRole(_role);
         }
+    }
+
+    /**
+     * @notice Admin can withdraw deposits of 'not passed' or 'donaters' users from specific bootcamp.
+     * @dev Admin is able to withdraw funds from the bootcamp contract which is already finished.
+     * Function restrictions:
+     *  - Only `ADMIN` can call this function.
+     *  - `_bootcamp` parameter shouldn't be address(0)
+     *  - `bootcampAddress` should be an address of existing bootcamp.
+     * 
+     * @param _amount - amount to withdraw from the `DepositHandler`(bootcamp) contract. 
+     * @param _bootcamp  - address of the bootcamp from which admin will withdraw.
+     */
+    function withdrawProfit(uint256 _amount, address _bootcamp) external onlyRole(ADMIN) {
+        if (_bootcamp == address(0) || !isBootcamp[_bootcamp]) {
+            revert BootcampFactory__InvalidBootcampAddress();
+        }
+        
+        uint256 remainingBalance = DepositHandler(_bootcamp).withdrawAdmin(msg.sender, _amount);
+
+        emit AdminFundsWithdrawn(msg.sender, _amount, remainingBalance);
     }
 }

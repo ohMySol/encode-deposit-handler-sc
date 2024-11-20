@@ -6,7 +6,7 @@ interface IDepositHandlerErrors {
     /**
      * @dev Error indicates that user tries to deposit an amount < `bootcampDeposit`.
      */
-    error DepositHandler__IncorrectDepositedAmount(uint256 _actualAmount);
+    error DepositHandler__IncorrectDepositedAmount(uint256 _actualAmount, uint256 expectedAmount);
 
     /**
      * @dev Error indicates that user didn't allow contract to spent enough tokens.
@@ -19,9 +19,9 @@ interface IDepositHandlerErrors {
     error DepositHandler__IncorrectAmountForWithdrawal(uint256 _withdrawAmount);
 
     /**
-     * @dev Error indicates that manager tries to change a state of the contract for `address(0)`.
+     * @dev Error indicates that someone set parameter `address(0)`.
      */
-    error DepositHandler__ParticipantAddressZero();
+    error DepositHandler__UserAddressCanNotBeZero();
 
     /**
      * @dev Error indicates that manager calls a function with zero size array.
@@ -44,6 +44,27 @@ interface IDepositHandlerErrors {
      *  depositing stage is already closed.
      */
     error DepositHandler__DepositingStageAlreadyClosed();
+
+    /**
+     * @dev Error indicates that user trying to withdraw funds from the bootcamp when
+     *  withdraw stage is already closed.
+     */
+    error DepositHandler__WithdrawStageAlreadyClosed();
+
+    /**
+     * @dev Error indicates that factory calling a withraw function when withdraw stage is not yet closed.
+     */
+    error DepositHandler__WithdrawStageNotClosed();
+
+    /**
+     * @dev Error indicates not a factory contract is trying to call this function.
+     */
+    error DepositHandler__CallerNotAFactoryContract();
+
+    /**
+     * @dev Error indicates that user is not a participant.
+     */
+    error DepositHandler__CallerNotParticipant();
 }
 
 // Custom errors for BootcampFactory.sol
@@ -65,9 +86,15 @@ interface IBootcampFactoryErrors {
     error BootcampFactory__UpdateNonExistentRole(bytes32 role);
 
     /**
-     * @dev Error indicates that manager creating a bootcamp instance with a start time not in the future.
+     * @dev Error indicates that manager creating a bootcamp instance with a start time not in the future,
+     * or deadline which is <= start time.
      */
-    error BootcampFactory__InvalidBootcampStartTime();
+    error BootcampFactory__InvalidBootcampStartOrDedlineTime();
+
+    /**
+     * @dev Error indicates that admin trying to withdraw money from non existent bootcamp.
+     */
+    error BootcampFactory__InvalidBootcampAddress();
 }
 
 // Custom errors for HelperConfig.sol 

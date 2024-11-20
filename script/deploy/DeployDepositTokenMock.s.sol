@@ -5,20 +5,19 @@ import {Script, console} from "forge-std/Script.sol";
 import {HelperConfig} from "../HelperConfig.s.sol";
 import {DepositTokenMock} from "../../test/mocks/DepositTokenMock.sol";
 
-contract DeployDepositTokenScript is Script {
+contract DeployDepositTokenMockScript is Script {
+   address[] testAccounts;
+
    function run() public {
         deploy();
    }
 
    // Deploy script for DepositTokenMock.sol
-   function deploy() public returns(DepositTokenMock, HelperConfig) {  
-        HelperConfig helperConfig = new HelperConfig();
-        HelperConfig.NetworkConfig memory config = helperConfig.getConfigByChainId(block.chainid);
-
-        vm.startBroadcast(config.admin);
-        DepositTokenMock mock = new DepositTokenMock();
+   function deploy() public returns(DepositTokenMock) {
+        vm.startBroadcast();
+        DepositTokenMock tokenMock = new DepositTokenMock();
         vm.stopBroadcast();
 
-        return (mock, helperConfig);
+        return tokenMock;
    }
 }
