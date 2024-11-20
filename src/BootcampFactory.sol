@@ -154,7 +154,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * @param _bootcamp  - address of the bootcamp from which admin will withdraw.
      */
     function withdrawProfit(uint256 _amount, address _bootcamp) external onlyRole(ADMIN) {
-        if (_bootcamp == address(0) || isBootcamp[_bootcamp]) {
+        if (_bootcamp == address(0) || !isBootcamp[_bootcamp]) {
             revert BootcampFactory__InvalidBootcampAddress();
         }
         
