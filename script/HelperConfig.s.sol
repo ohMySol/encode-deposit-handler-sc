@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {Script} from "forge-std/Script.sol";
+import {Script, console} from "forge-std/Script.sol";
 import {DepositTokenMock} from "../test/mocks/DepositTokenMock.sol";
 import {BootcampFactory} from "../src/BootcampFactory.sol";
 import {IHelperConfigErrors} from "../src/interfaces/ICustomErrors.sol";
@@ -61,7 +61,7 @@ contract HelperConfig is Script, Constants, IHelperConfigErrors {
             vm.stopBroadcast();
 
             localNetworkConfig = NetworkConfig({
-                depositAmount: 100,
+                depositAmount: 100000000,
                 depositToken: address(tokenMock),
                 bootcampStart: _bootcampStart,
                 bootcampDeadline: _bootcampStart + 10 minutes, // bootcamp dura
