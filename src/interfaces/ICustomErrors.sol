@@ -52,6 +52,11 @@ interface IDepositHandlerErrors {
     error DepositHandler__WithdrawStageAlreadyClosed();
 
     /**
+     * @dev Error indicates that factory calling a withraw function when withdraw stage is not yet closed.
+     */
+    error DepositHandler__WithdrawStageNotClosed();
+
+    /**
      * @dev Error indicates not a factory contract is trying to call this function.
      */
     error DepositHandler__CallerNotAFactoryContract();
