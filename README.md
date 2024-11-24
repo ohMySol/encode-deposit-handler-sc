@@ -27,6 +27,11 @@ Project consists from 2 parts: smart contracts and user friendly frontend. In th
  - At the moment we added a pausable mechanism, which can put on pause critical functionality of the DApp in case of strange behavior appear or bug was found.
  - Once issue will be investigated and resolved - all critical functinality will be uppaused.
 
+## Potential future improvements:
+1. **Abstraction + Cross Chain** 🌌. Support more types of deposits from more chains, providing more flexibility and possibilities for users liquidity.
+2. **Monetisation** 💵. Introduce a fee switch to bring revenue in either in form of a portion of the yield or the deposit amount.
+3. **Yield option**🤝. Underlying assets from deposits potentially can be staked(Aave, Morpho, Ethena…) and yield can be split with Encode.
+
 ## Frontend
 Frontend implementation is here: https://github.com/0xKubko/encode-deposit-handler-fe
 
