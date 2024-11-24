@@ -9,9 +9,7 @@ import {IBootcampFactoryErrors} from "./interfaces/ICustomErrors.sol";
  * @title Bootcamp Factory contract.
  * @author @ohMySol, @nynko, @ok567, @kubko
  * @notice Contract create new bootcamps.
- * @dev Contract for creation new instances of the `DepositHandler` contract with a Factory pattern. 
- * New instances are stored inside this factory contract and they can be quickly retrieved for the 
- * information and frontend usage.
+ * @dev Contract for creation new instances of the `DepositHandler` contract with a Factory pattern.
  * 
  * Roles:
  *  1. ADMIN - main role which is set up automatically for a deployer address. This role should potentialy
@@ -50,8 +48,9 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
      * by unique bootcamp address.
      * Function restrictions:
      *  - `_depositToken` address can not be address(0).
-     *  - `_bootcampStart` time should be a future time point.
-     *  - Can only be called by address with `MANAGER` role.
+     *  - `_bootcampStart` should be a future date.
+     *  - `_bootcampDeadline` should be > `_bootcampStart`.
+     *  - Can only be called by an address with `MANAGER` role.
      * 
      * Emits a {BootcampCreated} event.
      * 
@@ -97,12 +96,11 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     /////////////////////////////////////////////////*/
     /**
      * @notice Set a role to user.
-     * @dev Set `MANAGER` or `ADMIN` role to `_account` address. Function restricred
-     * to be called only by the `ADMIN` role.
+     * @dev Set `MANAGER` or `ADMIN` role to `_account` address.
      * Function restrictions:
-     *  - Can only be called by address with `ADMIN` role.
+     *  - Can only be called by an address with `ADMIN` role.
      *  - `_account` can not be address(0).
-     *  - `_role` can be only `MANAGER` or `ADMIN`.
+     *  - `_role` can only be `MANAGER` or `ADMIN`.
      * 
      * @param _role - bytes32 respresentation of the role.
      * @param _account - address of the user that will have an new role.
@@ -121,8 +119,7 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
 
     /**
      * @notice Remove role from user.
-     * @dev Remove `MANAGER` or `ADMIN` role from `_manager` address. Function restricred
-     * to be called only by the `ADMIN` role.
+     * @dev Remove `MANAGER` or `ADMIN` role from `_manager` address.
      * Function restrictions:
      *  - Can only be called by address with `ADMIN` role.
      *  - `_account` can not be address(0).
@@ -143,15 +140,17 @@ contract BootcampFactory is AccessControl, IBootcampFactoryErrors {
     }
 
     /**
-     * @notice Admin can withdraw deposits of 'not passed' or 'donaters' users from specific bootcamp.
-     * @dev Admin is able to withdraw funds from the bootcamp contract which is already finished.
+     * @notice Admin can withdraw deposits of 'not passed' or 'donaters' users from the specific bootcamp.
+     * @dev Admin is able to withdraw `_amount` from the `_bootcamp` contract which is already finished.
      * Function restrictions:
-     *  - Only `ADMIN` can call this function.
+     *  - Can only be called by an address with `ADMIN` role.
      *  - `_bootcamp` parameter shouldn't be address(0)
      *  - `bootcampAddress` should be an address of existing bootcamp.
      * 
+     * Emits a {AdminFundsWithdrawn} event.
+     * 
      * @param _amount - amount to withdraw from the `DepositHandler`(bootcamp) contract. 
-     * @param _bootcamp  - address of the bootcamp from which admin will withdraw.
+     * @param _bootcamp  - address of the bootcamp from which admin wants to withdraw.
      */
     function withdrawProfit(uint256 _amount, address _bootcamp) external onlyRole(ADMIN) {
         if (_bootcamp == address(0) || !isBootcamp[_bootcamp]) {

@@ -302,7 +302,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
 
     /**
      * @notice Set `participant` status to track his progress during the bootcamp.
-     * @dev Set status from `Status` enum for specific bootcamp `participant`.
+     * @dev Set status from `Status` enum for specific bootcamp `_participant`.
      * Function restrictions:
      *  - Can only be called by `MANAGER` of this contract.
      *  - `_participant` address can't be address(0).
