@@ -23,8 +23,6 @@ contract BootcampFactoryTest is Test {
     address public admin; 
     address public manager;
     address public alice;
-    address public bob;
-    address public sam;
 
     event BootcampCreated (
         uint256 indexed bootcampId,
