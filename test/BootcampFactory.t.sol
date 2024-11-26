@@ -17,7 +17,6 @@ contract BootcampFactoryTest is Test {
     bytes32 public constant INVALID_ROLE = bytes32("AVENGER");
     BootcampFactory public factory;
     DepositTokenMock public tokenMock;
-    HelperConfig public helperConfig;
     HelperConfig.NetworkConfig networkConfig;
     
     address public admin; 
@@ -38,9 +37,8 @@ contract BootcampFactoryTest is Test {
 
     function setUp() public {
         DeployBootcampFactoryScript deployer = new DeployBootcampFactoryScript();
-        (factory, helperConfig) = deployer.deploy();
+        (factory, networkConfig) = deployer.deploy();        
         
-        networkConfig = helperConfig.getConfigByChainId(block.chainid);
         tokenMock = DepositTokenMock(networkConfig.depositToken);
 
         admin = vm.addr(networkConfig.admin);
