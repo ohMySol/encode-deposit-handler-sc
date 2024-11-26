@@ -18,6 +18,8 @@ contract DeployDepositTokenMockScript is Script {
         DepositTokenMock tokenMock = new DepositTokenMock();
         vm.stopBroadcast();
 
+        console.log("Token mock contract deployed at: ", address(tokenMock));
+ 
         return tokenMock;
    }
 }

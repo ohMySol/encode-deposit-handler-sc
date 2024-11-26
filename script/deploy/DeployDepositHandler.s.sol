@@ -11,7 +11,7 @@ contract DeployDepositHandlerScript is Script{
    }
 
    // Deploy script for DepositHandler.sol
-   function deploy() public returns(DepositHandler, HelperConfig) {
+   function deploy() public returns(DepositHandler, HelperConfig.NetworkConfig memory) {
       HelperConfig helperConfig = new HelperConfig();
       HelperConfig.NetworkConfig memory config = helperConfig.getConfigByChainId(block.chainid);
 
@@ -28,6 +28,8 @@ contract DeployDepositHandlerScript is Script{
         );
         vm.stopBroadcast();
 
-        return (depositHandler, helperConfig);
+        console.log("DepositHandler contract deployed at: ", address(depositHandler));
+        
+        return (depositHandler, config);
    }
 }

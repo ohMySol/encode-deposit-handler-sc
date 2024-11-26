@@ -11,7 +11,7 @@ contract DeployBootcampFactoryScript is Script {
    }
 
    // Deploy script for BootcampFactory.sol
-   function deploy() public returns(BootcampFactory, HelperConfig) {  
+   function deploy() public returns(BootcampFactory, HelperConfig.NetworkConfig memory) {  
         HelperConfig helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfigByChainId(block.chainid);
 
@@ -19,6 +19,8 @@ contract DeployBootcampFactoryScript is Script {
         BootcampFactory factory = new BootcampFactory();
         vm.stopBroadcast();
 
-        return (factory, helperConfig);
+        console.log("BootcampFactory contract deployed at: ", address(factory));
+
+        return (factory, config);
    }
 }
