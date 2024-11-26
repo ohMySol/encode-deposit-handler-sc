@@ -5,19 +5,17 @@ import {Test, console} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {DeployDepositHandlerScript} from "../script/deploy/DeployDepositHandler.s.sol";
-import {DeployDepositTokenMockScript} from "script/deploy/DeployDepositTokenMock.s.sol";
 import {DepositHandler} from "../src/DepositHandler.sol";
 import {HelperConfig} from "../script/HelperConfig.s.sol";
 import {DepositTokenMock} from "../test/mocks/DepositTokenMock.sol";
 import {IDepositHandlerErrors} from "../src/interfaces/ICustomErrors.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
-contract BootcampFactoryTest is Test {
+contract DepositHandlerTest is Test {
     bytes32 public constant MANAGER = keccak256("MANAGER");
     bytes32 public constant INVALID_ROLE = bytes32("AVENGER");
     DepositHandler public bootcamp;
     DepositTokenMock public depositToken;
-    HelperConfig public helperConfig;
     HelperConfig.NetworkConfig networkConfig;
     
     address public manager;
@@ -36,12 +34,11 @@ contract BootcampFactoryTest is Test {
 
     function setUp() public {
         DeployDepositHandlerScript deployer = new DeployDepositHandlerScript();
-        (bootcamp, helperConfig) = deployer.deploy(); // receive instances from deploy script based on the network
-        networkConfig = helperConfig.getConfigByChainId(block.chainid);
+        (bootcamp, networkConfig) = deployer.deploy(); // receive instances from deploy script based on the network
 
         // Deploy the mock DepositToken if needed (this happens in HelperConfig for local chain)
         depositToken = DepositTokenMock(networkConfig.depositToken); // Get the mock token address from the config
-        
+
         manager = vm.addr(networkConfig.manager); // manager who depployed a bootcamp contract
         alice = makeAddr(("alice")); // some other user without MANAGER role.
         bob = makeAddr("bob");
