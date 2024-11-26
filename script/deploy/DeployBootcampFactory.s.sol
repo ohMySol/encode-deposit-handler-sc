@@ -13,7 +13,7 @@ contract DeployBootcampFactoryScript is Script {
    // Deploy script for BootcampFactory.sol
    function deploy() public returns(BootcampFactory, HelperConfig.NetworkConfig memory) {  
         HelperConfig helperConfig = new HelperConfig();
-        HelperConfig.NetworkConfig memory config = helperConfig.getConfigByChainId(block.chainid);
+        HelperConfig.NetworkConfig memory config = helperConfig.getConfigByChainId(block.chainid, false);
 
         vm.startBroadcast(config.admin);
         BootcampFactory factory = new BootcampFactory();

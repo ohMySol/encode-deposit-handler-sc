@@ -13,7 +13,7 @@ contract DeployDepositHandlerScript is Script{
    // Deploy script for DepositHandler.sol
    function deploy() public returns(DepositHandler, HelperConfig.NetworkConfig memory) {
       HelperConfig helperConfig = new HelperConfig();
-      HelperConfig.NetworkConfig memory config = helperConfig.getConfigByChainId(block.chainid);
+      HelperConfig.NetworkConfig memory config = helperConfig.getConfigByChainId(block.chainid, true);
 
       vm.startBroadcast(config.manager);
         DepositHandler depositHandler = new DepositHandler(
