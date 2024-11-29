@@ -37,6 +37,8 @@ contract HelperConfig is Script, Constants, IHelperConfigErrors {
             return getLocalNetworkConfig(_isDepositHandler);
         } else if (_chainId == TN_POL_MAINNET_FORK_CHAIN_ID) {
             return getPolygonMainnetForkNetworkConfig();
+        } else if (_chainId == POL_AMOY_CHAIN_ID) {
+            return getPolygonAmoyNetworkConfig();
         } else {
             revert HelperConfig_NotSupportedChain();
         }
@@ -101,7 +103,7 @@ contract HelperConfig is Script, Constants, IHelperConfigErrors {
      */
     function getPolygonMainnetForkNetworkConfig() public view returns(NetworkConfig memory) {
         uint256 _bootcampStart = block.timestamp + 10 minutes;
-        NetworkConfig memory localNetworkConfig = NetworkConfig({
+        NetworkConfig memory tenderlyNetworkConfig = NetworkConfig({
             depositAmount: 100000000,
             depositToken: address(0), // set your token mock address on Tenderly virtual network
             bootcampStart: _bootcampStart,
@@ -113,6 +115,23 @@ contract HelperConfig is Script, Constants, IHelperConfigErrors {
             admin: vm.envUint("TN_FORK_POL_MAINNET_ADMIN_PK")
         });
 
-        return localNetworkConfig;
+        return tenderlyNetworkConfig;
+    }
+
+    function getPolygonAmoyNetworkConfig() public view returns(NetworkConfig memory) {
+        uint256 _bootcampStart = block.timestamp + 10 minutes;
+        NetworkConfig memory amoyNetworkConfig = NetworkConfig({
+            depositAmount: 100000000,
+            depositToken: address(0), // set your token mock address on Amoy network
+            bootcampStart: _bootcampStart,
+            bootcampDeadline: _bootcampStart + 10 minutes,
+            withdrawDuration: 10 minutes,
+            factory: address(0), // set your bootcamp factory address on Amoy network
+            bootcampName: "G5",
+            manager: vm.envUint("MANAGER_LOCAL_PK"), // pk from anvil list
+            admin: vm.envUint("AMOY_ADMIN_PK")
+        });
+
+        return amoyNetworkConfig;
     }
 }
