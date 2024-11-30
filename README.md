@@ -101,4 +101,3 @@ Once the deployment completes, even if the terminal shows that the make command 
 To confirm that Anvil is running in the background, you can check with the following: `lsof -i :8545`.\
 6. When deploying a `DepositHandler` to `pol_fork_mainnet` or `amoy` netoworks, make sure that you pasted a `depositToken` and `factory` addresses in `HelperConfig.s.sol` file in appropriate network configs.
 7. When deploying to `pol_fork_mainnet` or `amoy` netoworks, make sure that you funded a deployer account with some POL.\
-8. 
