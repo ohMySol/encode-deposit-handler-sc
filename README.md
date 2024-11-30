@@ -40,15 +40,22 @@ Frontend implementation is here: https://github.com/0xKubko/encode-deposit-handl
 - [Foundry](https://book.getfoundry.sh/) (Development Framework)
 
 ## Setting Up The Project
+
+### Prerequisites 
 1. Clone/Download the Repository:
 ```shell
 git https://github.com/ohMySol/encode-deposit-handler-sc.git
 ```
-
-2. Install Dependencies:
-```shell
-$ forge install
+2. Set up .env file:
+Take a look in `.env.example` file. It is listed all necessary environment variables that should be set up to run a project successfully.
+3. Initialize the project:
 ```
+$ source .env
+```
+```shell
+$ make all
+```
+This command will run the commands for cleaning, updating, building and testing the project. After this command you should see that all green tests which means that project was successfully initialized and it is ready for the future usage.
 
 ## Usage
 
@@ -73,5 +80,25 @@ $ forge fmt
 ### Deploy
 
 ```shell
-$ forge script script/DepositHandler.s.sol:DepositHandlerScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+$ make deploy CONTRACT_NAME="<your contract name>" ARGS="<network name u are deploying to>".
 ```
+
+```shell
+Examples:
+$ make deploy CONTRACT_NAME="BootcampFactory" - this will deploy BootcampFactory to localhost
+$ make deploy CONTRACT_NAME="BootcampFactory" ARGS="amoy" - this will deploy BootcampFactory to Amoy network
+```
+1. Check if you upload your .env variable to the shell by command `echo $ADMIN_LOCAL_PK`. After this command you should see an Admin private key from your .env in the terminal. If you don't see this, then run this command `source .env` which will upload your .env variables to the shell.
+2. `CONTRACT_NAME` parameter. Here you should paste the contract which u would like to deploy. Available contracts options for deployment at the moment: `DepositTokenMock`, `DepositHandler`, `BootcampFactory`.
+3. `ARGS` parameter. It stands for network name to which you would like to deploy your contract. Available networks options for deployment at the moment: `pol_fork_mainnet`, `amoy`, `no value` - means you deploying to localhost.
+4. If u deploying to Tenderly or Amoy, this script will automatically verify your contract.
+5. When you deploy to a local environment (like Anvil) using a Makefile or a deployment script, the Anvil process itself often runs in the background. However, when you execute a `make` command that includes `anvil &` (running Anvil in the background), it starts Anvil and then completes the make command. This can make it seem like Anvil has "stopped working" because the terminal will show that the `make` command has finished.\
+But in reality:
+   - Anvil is running in the background due to the `&` at the end of the command, which allows it to run asynchronously.
+   - `make` command finishes after starting Anvil, and it doesn't keep an interactive session with the running process.
+   
+Once the deployment completes, even if the terminal shows that the make command is finished, the Anvil process is still running and **you can interact with the deployed contract**.\
+To confirm that Anvil is running in the background, you can check with the following: `lsof -i :8545`.\
+6. When deploying a `DepositHandler` to `pol_fork_mainnet` or `amoy` netoworks, make sure that you pasted a `depositToken` and `factory` addresses in `HelperConfig.s.sol` file in appropriate network configs.
+7. When deploying to `pol_fork_mainnet` or `amoy` netoworks, make sure that you funded a deployer account with some POL.\
+8. 
