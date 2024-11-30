@@ -4,7 +4,13 @@ out = "out"
 test = 'test'
 libs = ["lib"]
 gas_reports = ["BootcampFactory", "DepositHandler"]
+cbor_metadata = true
 
+[etherscan]
+tenderly_pol_fork_mainnet = { key = "$TENDERLY_ACCESS_KEY", chain = 25112000, url = "${TN_FORK_POL_MAINNET_RPC_URL}/verify/etherscan" }
+amoy = {key = "$AMOY_API_KEY", chain = 80002, url = "${AMOY_API_URL}"}
+
+[profile.remappings]
 remappings = [
     'openzeppelin/=lib/openzeppelin-contracts/',
     'forge-std/=lib/forge-std/src'
