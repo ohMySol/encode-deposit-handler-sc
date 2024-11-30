@@ -48,10 +48,11 @@ git https://github.com/ohMySol/encode-deposit-handler-sc.git
 ```
 2. Set up .env file:
 Take a look in `.env.example` file. It is listed all necessary environment variables that should be set up to run a project successfully.
-3. Initialize the project:
+3. Upload .env variables to shell:
 ```
 $ source .env
 ```
+4. Initialize the project:
 ```shell
 $ make all
 ```
