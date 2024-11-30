@@ -8,7 +8,7 @@ import {IHelperConfigErrors} from "../src/interfaces/ICustomErrors.sol";
 
 abstract contract Constants {
     uint256 public constant POL_AMOY_CHAIN_ID = 80002;
-    uint256 public constant TN_POL_MAINNET_FORK_CHAIN_ID = 25112000;
+    uint256 public constant TN_POL_MAINNET_FORK_CHAIN_ID = 25112000; // please set up here your custom chain id from Tenderly virtual network
     uint256 public constant LOCAL_CHAIN_ID = 31337;
 }
 
@@ -97,6 +97,7 @@ contract HelperConfig is Script, Constants, IHelperConfigErrors {
      *  - `bootcampStart` - feel free to change.
      *  - `bootcampDeadline` - feel free to change.
      *  - `withdrawDuration` - feel free to change.
+     *  - `factory` - deploy BootcampFactory to Tenderly virtual network and set contract address in config.
      *   - `bootcampName` - feel free to change.
      * 
      * @return NetworkConfig structure is returned.
@@ -118,6 +119,21 @@ contract HelperConfig is Script, Constants, IHelperConfigErrors {
         return tenderlyNetworkConfig;
     }
 
+    /**
+     * @dev Returns a config with necessary parameters for Amoy testnet deployment/interraction/testing.
+     * Instructions:
+     *  - `depositToken` deploy token mock to Amoy virtual network and set contract address in config.
+     *  - `admin`
+     *  - `manager`
+     *  - `depositAmount` - feel free to change.
+     *  - `bootcampStart` - feel free to change.
+     *  - `bootcampDeadline` - feel free to change.
+     *  - `withdrawDuration` - feel free to change.
+     *  - `factory` - deploy BootcampFactory to Amoy virtual network and set contract address in config.
+     *   - `bootcampName` - feel free to change.
+     * 
+     * @return NetworkConfig structure is returned.
+     */
     function getPolygonAmoyNetworkConfig() public view returns(NetworkConfig memory) {
         uint256 _bootcampStart = block.timestamp + 10 minutes;
         NetworkConfig memory amoyNetworkConfig = NetworkConfig({
