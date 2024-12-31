@@ -141,6 +141,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      *  - Can only be called before the `bootcampStart`.
      *  - `_amount` value should be the same as required in `depositAmount`.
      *  - Caller should allow this contract to spend his USDC, before calling this function.
+     *  - Caller can deposit only once.
      * 
      * Emits a {DepositDone} event.
     */
