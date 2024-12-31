@@ -24,9 +24,11 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     string public bootcampName;
     address[] public emergencyWithdrawParticipants;
     mapping(address => depositInfo) public deposits;
-    mapping(address => bool) public isParticipant;
-
-    enum Status { // status of the bootcamp participant. 
+    mapping(address => bool) public participants;
+    
+    // status of the bootcamp participant. 
+    enum Status {
+        Pending, // initial status
         InProgress, // participant passing a bootcamp.
         Withdraw, // praticipant allowed for withdraw.
         Passed, // bootcamp was passed successfully, and deposit will be returned.
@@ -54,6 +56,13 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
         Status status = deposits[msg.sender].status;
         if (status != _status) {
             revert DepositHandler__NotAllowedActionWithYourStatus();
+        }
+        _;
+    }
+
+    modifier isParticipant() {
+        if(!participants[msg.sender]) {
+            revert DepositHandler__CallerNotParticipant();
         }
         _;
     }
@@ -121,11 +130,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * Function restrictions:
      *  - Can only be called by a participant of the bootcamp.
      */
-    function donate() external whenNotPaused {
-        if(!isParticipant[msg.sender]) {
-            revert DepositHandler__CallerNotParticipant();
-        }
-
+    function donate() external whenNotPaused isParticipant {
         deposits[msg.sender].depositDonation = true;
     }
 
@@ -139,32 +144,31 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      *  - Can only be called before the `bootcampStart`.
      *  - `_amount` value should be the same as required in `depositAmount`.
      *  - Caller should allow this contract to spend his USDC, before calling this function.
+     *  - Caller can deposit only once.
      * 
      * Emits a {DepositDone} event.
-     * 
-     * @param _amount - USDC amount.
-     * @param _depositor - address of the bootcamp participant.
-     */
-    function deposit(uint256 _amount, address _depositor) external whenNotPaused {
-        _notAddressZero(_depositor);
-        uint256 allowance = depositToken.allowance(_depositor, address(this));
+    */
+    function deposit() external whenNotPaused {
+        _notAddressZero(msg.sender);
+        uint256 allowance = depositToken.allowance(msg.sender, address(this));
+        
+        if (deposits[msg.sender].status == Status.InProgress) { // checking if user already did a deposit
+            revert DepositHandler__UserAlreadyDeposited();
+        }
         if (block.timestamp > bootcampStart) { // checking that user can do a deposit only during depositing stage(before bootcamp starts)
             revert  DepositHandler__DepositingStageAlreadyClosed();
         }
-        if (_amount != depositAmount) {
-            revert DepositHandler__IncorrectDepositedAmount(_amount, depositAmount);
-        }
-        if (allowance < _amount) {
+        if (allowance < depositAmount) {
             revert DepositHandler__ApprovedAmountLessThanDeposit(allowance);
         }
         
-        deposits[_depositor].depositedAmount += _amount;
-        deposits[_depositor].status = Status.InProgress; // set status to InProgress once user did a deposit, so that it means user is participating in bootcamp.
-        isParticipant[_depositor] = true;
-        emergencyWithdrawParticipants.push(_depositor);
-        SafeERC20.safeTransferFrom(depositToken, _depositor, address(this), _amount);
+        deposits[msg.sender].depositedAmount += depositAmount;
+        deposits[msg.sender].status = Status.InProgress; // set status to InProgress once user did a deposit, so that it means user is participating in bootcamp.
+        participants[msg.sender] = true;
+        emergencyWithdrawParticipants.push(msg.sender);
+        SafeERC20.safeTransferFrom(depositToken, msg.sender, address(this), depositAmount);
         
-        emit DepositDone(_depositor, _amount);
+        emit DepositDone(msg.sender, depositAmount);
     }
 
     /**
@@ -173,20 +177,18 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * Function restrictions: 
      *  - Contract shouldn't be on Pause.
      *  - Can only be called when user has a status `Withdraw`.
+     *  - Can only be called by a participant of the bootcamp.
      *  - Can only be called when `bootcampWithdrawTime` is not elapsed.
-     * 
-     * @param _amount - USDC amount.
-     * @param _depositor - address of the participant.
      */
-    function withdraw(uint256 _amount, address _depositor) external isAllowed(Status.Withdraw) {
+    function withdraw() external isParticipant isAllowed(Status.Withdraw) {
         if (_checkWitdrawStageFinished()) {
             revert DepositHandler__WithdrawStageAlreadyClosed();
         }
-        _withdraw(_amount, _depositor, Status.Passed);
+        _withdraw(msg.sender, Status.Passed);
     }
 
     /**
-     * @notice Manager si able to withdraw users deposits back to them if some emergency situation appear.
+     * @notice Manager is able to withdraw users deposits back to them if some emergency situation appear.
      * Everyone who participated in the bootcamp will receive their deposit back in case of emergency.
      * Example of emergency situation:
      *  1. Manager set up incorrect(too long duration).
@@ -203,12 +205,11 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      *  - No check whether the user has a `Withdraw` status.
      */
     function emergencyWithdraw() external onlyRole(MANAGER) {
-        address[] memory participants = emergencyWithdrawParticipants;
-        uint256 length = participants.length;
-        uint256 amount = depositAmount;
+        address[] memory _participants = emergencyWithdrawParticipants;
+        uint256 length = _participants.length;
 
         for (uint256 i = 0; i < length; i++) {
-            _withdraw(amount, participants[i], Status.Emergency);   
+            _withdraw(_participants[i], Status.Emergency);   
         }
     }
 
@@ -222,20 +223,18 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      * 
      * Emits a {DepositWithdrawn} event.
      * 
-     * @param _amount - USDC amount.
      * @param _depositor - address of the bootcamp participant. 
      * @param _status - status of the participant after withdrawal.
      */
-    function _withdraw(uint256 _amount, address _depositor, Status _status) internal whenNotPaused {
+    function _withdraw(address _depositor, Status _status) internal whenNotPaused {
         _notAddressZero(_depositor);
-        _checkWithdrawAmount(_amount, _depositor);
         
         deposits[_depositor].status = _status; // based on the situation, manager will assign an appropriate status.
         deposits[_depositor].depositedAmount = 0;
-        isParticipant[_depositor] = false; // once withdraw user no longer a participant
-        SafeERC20.safeTransfer(depositToken, _depositor, _amount);
+        participants[_depositor] = false; // once withdraw user no longer a participant
+        SafeERC20.safeTransfer(depositToken, _depositor, depositAmount);
         
-        emit DepositWithdrawn(_depositor, _amount);
+        emit DepositWithdrawn(_depositor, depositAmount);
     }
 
     /**
@@ -246,18 +245,6 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     function _notAddressZero(address _user) internal pure {
         if (_user == address(0)) {
             revert DepositHandler__UserAddressCanNotBeZero();
-        }
-    }
-
-    /**
-     * @dev Verifies that `_amount` requested for a withdraw equals original deposited USDC amount.
-     * 
-     * @param _amount - amount of USDC to withdaw.
-     * @param _participant - address of the participant.
-     */
-    function _checkWithdrawAmount(uint256 _amount, address _participant) internal view {
-        if (deposits[_participant].depositedAmount != _amount) {
-            revert DepositHandler__IncorrectAmountForWithdrawal(_amount);
         }
     }
 
@@ -331,12 +318,11 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      *  - Can only be called by `MANAGER` of this contract.
      *  - Contract shouldn't be on Pause.
      *
-     * @param _amount - deposited amoount for the bootcamp.
      * @param _participant - address of the participant requesting extra withdraw.
      * @param _status  - `Status` which admin should set for this participant, based on the situation.
      */
-    function exceptionalWithdraw(uint256 _amount, address _participant, Status _status) external onlyRole(MANAGER) {
-        _withdraw(_amount, _participant, _status);// based on the situation, manager will assign an appropriate status.
+    function exceptionalWithdraw(address _participant, Status _status) external onlyRole(MANAGER) {
+        _withdraw(_participant, _status);// based on the situation, manager will assign an appropriate status.
     }
 
     /**
