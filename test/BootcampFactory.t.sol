@@ -51,7 +51,7 @@ contract BootcampFactoryTest is Test {
     /*//////////////////////////////////////////////////
                 INITIALIZATION TESTS
     /////////////////////////////////////////////////*/
-    function test_BootcampFactoryContractInitializedWithCorrectAdmin() public {
+    function test_Bootcamp_Factory_Contract_Initialized_With_Correct_Admin() public {
         assertTrue(factory.hasRole(ADMIN, admin));
         assertEq(factory.getRoleAdmin(MANAGER), ADMIN);
     }
@@ -61,21 +61,21 @@ contract BootcampFactoryTest is Test {
     /*//////////////////////////////////////////////////
                 GRANTROLE TESTS
     /////////////////////////////////////////////////*/
-    function test_AdminSuccessfullyGrantManagerRoleToUser() public {
+    function test_Admin_Successfully_Grant_Manager_Role_To_User() public {
         vm.prank(admin);
         factory.grantRole(MANAGER, manager);
         
         assertTrue(factory.hasRole(MANAGER, manager));
     }
 
-    function test_AdminSuccessfullyGrantAdminRoleToUser() public {
+    function test_Admin_Successfully_Gran_Admin_Role_To_User() public {
         vm.prank(admin);
         factory.grantRole(ADMIN, alice);
         
         assertTrue(factory.hasRole(ADMIN, alice));
     }
 
-    function test_OnlyAdminCanGrantNewRoles() public {
+    function test_Only_Admin_Can_Grant_New_Roles() public {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(
             IAccessControl.AccessControlUnauthorizedAccount.selector,
@@ -86,7 +86,7 @@ contract BootcampFactoryTest is Test {
         factory.grantRole(MANAGER, manager);
     }
 
-    function test_AccountReceivingNewRoleCanNotBeAddressZero() public {
+    function test_Account_Receiving_New_Role_Can_Not_Be_Address_Zero() public {
         vm.prank(admin);
         vm.expectRevert(
             IBootcampFactoryErrors.BootcampFactory__CanNotUpdateRoleForZeroAddress.selector
@@ -95,7 +95,7 @@ contract BootcampFactoryTest is Test {
         factory.grantRole(MANAGER, address(0));
     }
 
-    function test_AdminCanNotGrantNonExistentRole() public {
+    function test_Admin_Can_Not_Grant_Non_Existent_Role() public {
         vm.prank(admin);
         vm.expectRevert(abi.encodeWithSelector(
             IBootcampFactoryErrors.BootcampFactory__UpdateNonExistentRole.selector, 
@@ -110,19 +110,19 @@ contract BootcampFactoryTest is Test {
     /*//////////////////////////////////////////////////
                 REVOKEROLE TESTS
     /////////////////////////////////////////////////*/
-    function test_AdminSuccessfullyRevokeManagerRoleFromUser() public adminGrantManagerRole {
+    function test_Admin_Successfully_Revoke_Manager_Role_From_User() public adminGrantManagerRole {
         factory.revokeRole(MANAGER, manager);
         
         assertFalse(factory.hasRole(MANAGER, manager));
     }
     
-     function test_AdminSuccessfullyRevokeAdminRoleFromUser() public adminGrantManagerRole {
+     function test_Admin_Successfully_Revoke_Admin_Role_From_User() public adminGrantManagerRole {
         factory.revokeRole(ADMIN, alice);
 
         assertFalse(factory.hasRole(ADMIN, alice));
     }
 
-    function test_OnlyAdminCanRevokeTheRoles() public adminGrantManagerRole {
+    function test_Only_Admin_Can_Revoke_The_Roles() public adminGrantManagerRole {
         vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(
             IAccessControl.AccessControlUnauthorizedAccount.selector,
@@ -133,7 +133,7 @@ contract BootcampFactoryTest is Test {
         factory.revokeRole(MANAGER, manager);
     }
 
-    function test_AccountLosingARoleCanNotBeAddressZero() public adminGrantManagerRole {
+    function test_Account_Losing_A_Role_Can_Not_Be_Address_Zero() public adminGrantManagerRole {
         vm.expectRevert(
             IBootcampFactoryErrors.BootcampFactory__CanNotUpdateRoleForZeroAddress.selector
         );
@@ -141,7 +141,7 @@ contract BootcampFactoryTest is Test {
         factory.revokeRole(MANAGER, address(0));
     }
     
-    function test_AdminCanNotRevokeNonExistentRole() public adminGrantManagerRole {
+    function test_Admin_Can_Not_Revoke_Non_Existent_Role() public adminGrantManagerRole {
         vm.expectRevert(abi.encodeWithSelector(
             IBootcampFactoryErrors.BootcampFactory__UpdateNonExistentRole.selector, 
             INVALID_ROLE
@@ -155,7 +155,7 @@ contract BootcampFactoryTest is Test {
     /*//////////////////////////////////////////////////
                 CREATEBOOTCAMP TESTS
     /////////////////////////////////////////////////*/
-    function test_ManagerSuccessfullyCreateNewBootcamp() public adminGrantManagerRole {
+    function test_Manager_Successfully_Create_New_Bootcamp() public adminGrantManagerRole {
         vm.startPrank(manager);
         address _bootcampAddress = factory.createBootcamp(
             networkConfig.depositAmount,
@@ -171,7 +171,7 @@ contract BootcampFactoryTest is Test {
         assertEq(isBootcamp, true);
     }
 
-    function test_EventIsEmittedOnceBootcampIsCreated() public adminGrantManagerRole {
+    function test_Event_Is_Emitted_Once_Bootcamp_Is_Created() public adminGrantManagerRole {
         vm.startPrank(manager);
         // recording data from events
         vm.recordLogs();
@@ -189,7 +189,7 @@ contract BootcampFactoryTest is Test {
         assertEq(bootcampAddress, _bootcamAddress);
     }
 
-   function test_OnlyManagerCanCreateNewBootcamp() public adminGrantManagerRole {
+   function test_Only_Manager_Can_Create_New_Bootcamp() public adminGrantManagerRole {
         vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(
             IAccessControl.AccessControlUnauthorizedAccount.selector,
@@ -207,7 +207,7 @@ contract BootcampFactoryTest is Test {
         );
     }
 
-    function test_DepositTokenForBootcampCanNotBeAddressZero() public adminGrantManagerRole {
+    function test_Deposit_Token_For_Bootcamp_Can_Not_Be_Address_Zero() public adminGrantManagerRole {
         vm.startPrank(manager);
         vm.expectRevert(
             IBootcampFactoryErrors.BootcampFactory__DepositTokenCanNotBeZeroAddress.selector
@@ -223,7 +223,7 @@ contract BootcampFactoryTest is Test {
         );
     }
 
-    function test_BootcampCreationFailsIfStartDateInThePast() public adminGrantManagerRole {
+    function test_Bootcamp_Creation_Fails_If_Start_Date_In_The_Past() public adminGrantManagerRole {
         vm.startPrank(manager);
         vm.expectRevert(
             IBootcampFactoryErrors.BootcampFactory__InvalidBootcampStartOrDedlineTime.selector
@@ -241,7 +241,7 @@ contract BootcampFactoryTest is Test {
         );
     }
 
-    function test_BootcampCreationFailsIfStartDateIsActualTime() public adminGrantManagerRole {
+    function test_Bootcamp_Creation_Fails_If_Start_Date_Is_Actual_Time() public adminGrantManagerRole {
         vm.startPrank(manager);
         vm.expectRevert(
             IBootcampFactoryErrors.BootcampFactory__InvalidBootcampStartOrDedlineTime.selector
@@ -257,7 +257,7 @@ contract BootcampFactoryTest is Test {
         );
     }
 
-    function test_BootcampCreationFailsIfDeadlineDateEqStartDate() public adminGrantManagerRole {
+    function test_Bootcamp_Creation_Fails_If_Deadline_Date_Eq_StartDate() public adminGrantManagerRole {
         vm.startPrank(manager);
         vm.expectRevert(
             IBootcampFactoryErrors.BootcampFactory__InvalidBootcampStartOrDedlineTime.selector
@@ -278,7 +278,7 @@ contract BootcampFactoryTest is Test {
     /*//////////////////////////////////////////////////
                 WITHDRAWPROFIT TESTS
     /////////////////////////////////////////////////*/
-    function test_AdminSuccessfullyWithdrawProfitFromBootcampContract() public adminGrantManagerRole {
+    function test_Admin_Successfully_Withdraw_Profit_From_Bootcamp_Contract() public adminGrantManagerRole {
         vm.startPrank(manager);
         // 1. Create bootcamp
         address _bootcampAddress = factory.createBootcamp(
@@ -290,13 +290,12 @@ contract BootcampFactoryTest is Test {
             networkConfig.bootcampName
         );
         DepositHandler bootcamp = DepositHandler(_bootcampAddress);
-        console.log(_bootcampAddress);
-        console.log("Is Bootcamp: ", factory.isBootcamp(_bootcampAddress));
+
         // 2. Fund alice address with USDC and do a deposit.
         vm.startPrank(alice);
         tokenMock.mint(alice, 100);
         tokenMock.approve(_bootcampAddress, 100000000);
-        bootcamp.deposit(100000000, address(alice));
+        bootcamp.deposit();
 
         // 3. Set participant as Donater, to withdraw later his deposit from the bootcamp.
         bootcamp.donate();
@@ -312,7 +311,7 @@ contract BootcampFactoryTest is Test {
         assertEq(tokenMock.balanceOf(_bootcampAddress), 0);
     }
 
-    function test_EventIsEmittedAfterProfitWithdrawWithCorrectLogs() public adminGrantManagerRole {
+    function test_Event_Is_Emitted_After_Profit_Withdraw_With_CorrectLogs() public adminGrantManagerRole {
         vm.startPrank(manager);
         // 1. Create bootcamp
         address _bootcampAddress = factory.createBootcamp(
@@ -329,7 +328,7 @@ contract BootcampFactoryTest is Test {
         vm.startPrank(alice);
         tokenMock.mint(alice, 100);
         tokenMock.approve(_bootcampAddress, 100000000);
-        bootcamp.deposit(100000000, address(alice));
+        bootcamp.deposit();
 
         // 3. Set participant as Donater, to withdraw later his deposit from the bootcamp.
         bootcamp.donate();
@@ -351,7 +350,7 @@ contract BootcampFactoryTest is Test {
         assertEq(remainingBalance, 0);            
     }
 
-    function test_WithdrawProfitRevertsIfCallerIsNotAdmin() public {
+    function test_Withdraw_Profit_Reverts_If_Caller_Is_Not_Admin() public {
         vm.startPrank(manager);
         vm.expectRevert(abi.encodeWithSelector(
             IAccessControl.AccessControlUnauthorizedAccount.selector,
@@ -362,7 +361,7 @@ contract BootcampFactoryTest is Test {
         factory.withdrawProfit(100000000, makeAddr("random address"));
     }
 
-    function test_WithdrawProfitRevertsIfBootcampParameterIsZero() public {
+    function test_Withdraw_Profit_Reverts_If_Bootcamp_Parameter_Is_Zero() public {
         vm.startPrank(admin);
         vm.expectRevert(
             IBootcampFactoryErrors.BootcampFactory__InvalidBootcampAddress.selector
@@ -371,7 +370,7 @@ contract BootcampFactoryTest is Test {
         factory.withdrawProfit(100000000, address(0));
     }
 
-    function test_WithdrawProfitRevertsIfBootcampParameterIsNotAnActualBootcamp() public {
+    function test_Withdraw_Profit_Reverts_If_Bootcamp_Parameter_Is_Not_An_Actual_Bootcamp() public {
         vm.startPrank(admin);
         vm.expectRevert(
             IBootcampFactoryErrors.BootcampFactory__InvalidBootcampAddress.selector
