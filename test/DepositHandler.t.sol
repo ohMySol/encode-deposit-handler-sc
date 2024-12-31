@@ -88,7 +88,29 @@ contract DepositHandlerTest is Test {
         assertEq(uint256(status), uint256(DepositHandler.Status.InProgress), "Deposit status mismatch"); //check that alice has the status of inProgress
     }
 
-    function test_DepositAfterBootcampStart() public {
+    function test_DepositFunction_Revert_When_User_Do_Double_Deposit() public {
+        uint256 aliceInitialBalance = depositToken.balanceOf(alice);
+        assertTrue(aliceInitialBalance >= networkConfig.depositAmount, "Alice does not have enough tokens for deposit"); //check alice has enough
+        assertTrue(alice != address(0), "Deposit recipient cannot be zero address"); //checks that it isnt a zero address
+    
+        vm.startPrank(alice);
+        depositToken.approve(address(bootcamp), networkConfig.depositAmount); //approve the bootcamp contract to spend their allowance granted by alice
+
+        uint256 approvedAmount = depositToken.allowance(alice, address(bootcamp));
+        assertEq(approvedAmount, networkConfig.depositAmount, "Approval amount mismatch"); //ensure approved amount is equal to depositamount
+
+        emit DepositDone(alice, networkConfig.depositAmount);
+        bootcamp.deposit(); //deposit amount to bootcamp
+
+        (uint256 depositedAmount, , DepositHandler.Status status) = bootcamp.deposits(alice);
+        assertEq(depositedAmount, networkConfig.depositAmount, "Deposit amount mismatch"); //ensure that the amount deposited is equal to the despoistAmount of the bootcamp
+        assertEq(uint256(status), uint256(DepositHandler.Status.InProgress), "Deposit status mismatch"); //check that alice has the status of inProgress
+
+        vm.expectRevert(IDepositHandlerErrors.DepositHandler__UserAlreadyDeposited.selector);
+        bootcamp.deposit();
+    }
+
+    function test_Deposit_After_Bootcamp_Start() public {
         vm.warp(networkConfig.bootcampStart + 1); // warp the blockchain time to just after the bootcamp starts
 
         uint256 aliceInitialBalance = depositToken.balanceOf(alice);
@@ -103,7 +125,7 @@ contract DepositHandlerTest is Test {
         bootcamp.deposit();
     }
 
-    function test_DepositFailsWhenContractPaused() public {
+    function test_Deposit_Fails_When_Contract_Paused() public {
         // aice tries to deposit, and the contract is not paused initially
         uint256 aliceInitialBalance = depositToken.balanceOf(alice);
         assertTrue(aliceInitialBalance >= networkConfig.depositAmount, "Alice does not have enough tokens for deposit");
@@ -240,7 +262,7 @@ contract DepositHandlerTest is Test {
 
     }
 
-    function test_Withdraw_RevertsWhenPaused() public {
+    function test_Withdraw_Reverts_When_Paused() public {
         // Set up initial deposit for alice
         vm.startPrank(alice);
         depositToken.approve(address(bootcamp), networkConfig.depositAmount);
@@ -265,7 +287,7 @@ contract DepositHandlerTest is Test {
         bootcamp.withdraw(networkConfig.depositAmount, alice);
     }
 
-    function test_Withdrawal_Reverts_WhenPeriodHasEnded() public {
+    function test_Withdrawal_Reverts_When_Period_Has_Ended() public {
         // Set up initial deposit for Alice
         vm.startPrank(alice);
         depositToken.approve(address(bootcamp), networkConfig.depositAmount);
@@ -311,14 +333,14 @@ contract DepositHandlerTest is Test {
     }
 
 
-    function test_WithdrawAdmin_RevertsIfNotFactory() public {
+    function test_WithdrawAdmin_Reverts_If_Not_Factory() public {
         vm.prank(alice);
         vm.expectRevert(IDepositHandlerErrors.DepositHandler__CallerNotAFactoryContract.selector);
         bootcamp.withdrawAdmin(manager, networkConfig.depositAmount);
     }
 
 
-    function test_WithdrawAdmin_RevertsIfPaused() public {
+    function test_WithdrawAdmin_Reverts_If_Paused() public {
         //pause the contract
         vm.prank(manager);
         bootcamp.pause();
@@ -334,7 +356,7 @@ contract DepositHandlerTest is Test {
         //bootcamp.withdrawAdmin(manager, networkConfig.depositAmount);
     //}
 
-    function test_WithdrawAdmin_RevertsIfAmountExceedsBalance() public {
+    function test_WithdrawAdmin_Reverts_If_Amount_Exceeds_Balance() public {
         //simulate bootcamp finish and end of withdraw stage
         vm.warp(bootcamp.bootcampDeadline() + bootcamp.withdrawDuration() + 1);
 
@@ -353,7 +375,7 @@ contract DepositHandlerTest is Test {
      /*//////////////////////////////////////////////////
                Exceptional WITHDRAW FUNCTION TESTS
     /////////////////////////////////////////////////*/
-    function test_ExceptionalWithdraw_Success_WhenStatusIsntChanged() public {
+    function test_ExceptionalWithdraw_Success_WhenStatus_Is_Not_Changed() public {
         // alice deposits into the contract
         vm.startPrank(alice);
         //depositToken.mint(alice, 100);
@@ -378,7 +400,7 @@ contract DepositHandlerTest is Test {
         emit DepositWithdrawn(alice, networkConfig.depositAmount);
     }
 
-    function test_ExceptionalWithdraw_Success_WithPassedStatus() public {
+    function test_ExceptionalWithdraw_Success_With_Passed_Status() public {
         // alice deposits into the contract
         vm.startPrank(alice);
         depositToken.approve(address(bootcamp), networkConfig.depositAmount);
@@ -430,7 +452,7 @@ contract DepositHandlerTest is Test {
         assertEq(uint256(bobStatus), uint256(DepositHandler.Status.Passed), "Bob's status should be Passed");
     }
 
-    function test_UpdateStatusBatch_Revert_IfEmptyArray() public {
+    function test_UpdateStatusBatch_Revert_If_Empty_Array() public {
         // call the updateStatusBatch with an empty array
         address[] memory participants = new address[](0);
 
@@ -439,7 +461,7 @@ contract DepositHandlerTest is Test {
         bootcamp.updateStatusBatch(participants, DepositHandler.Status.Passed);
     }
 
-    function test_UpdateStatusBatch_Revert_IfNonManagerCalls() public {
+    function test_UpdateStatusBatch_Revert_If_Non_Manager_Calls() public {
         address[] memory participants = new address[](2);
         participants[0] = alice;
         participants[1] = bob;
@@ -458,7 +480,7 @@ contract DepositHandlerTest is Test {
 
 
 
-    function test_UpdateStatusBatch_Revert_IfParticipantAddressIsZero() public {
+    function test_UpdateStatusBatch_Revert_If_Participant_Address_Is_Zero() public {
         // set up a batch where one address is zero
         address[] memory participants = new address[](2);
         participants[0] = alice;
@@ -475,7 +497,7 @@ contract DepositHandlerTest is Test {
                 Pause and unpause TESTS
     /////////////////////////////////////////////////*/
 
-    function test_Pause_Revert_IfNotManager() public {
+    function test_Pause_Revert_If_Not_Manager() public {
         // try to pause the contract with a non-manager account
         vm.prank(alice);
         vm.expectRevert(
@@ -489,7 +511,7 @@ contract DepositHandlerTest is Test {
     }
 
 
-    function test_Unpause_Revert_IfNotManager() public {
+    function test_Unpause_Revert_If_Not_Manager() public {
         // manager pauses the contract first
         vm.prank(manager);
         bootcamp.pause();
@@ -512,7 +534,7 @@ contract DepositHandlerTest is Test {
     /////////////////////////////////////////////////*/
 
 
-    function test_Participant_CanDonateSuccessfully() public {
+    function test_Participant_Can_Donate_Successfully() public {
         // Arrange: Make Alice a participant
         vm.startPrank(alice);
         depositToken.approve(address(bootcamp), networkConfig.depositAmount);
@@ -527,7 +549,7 @@ contract DepositHandlerTest is Test {
         assertTrue(depositDonation, "Donation status should be true after successful donation.");
     }
 
-    function test_NonParticipant_DonationFails() public {
+    function test_NonParticipant_Donation_Fails() public {
         // Act & Assert: Bob tries to donate but is not a participant
         vm.prank(bob);
         vm.expectRevert(IDepositHandlerErrors.DepositHandler__CallerNotParticipant.selector);
