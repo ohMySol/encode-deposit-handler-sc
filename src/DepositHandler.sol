@@ -25,8 +25,10 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     address[] public emergencyWithdrawParticipants;
     mapping(address => depositInfo) public deposits;
     mapping(address => bool) public isParticipant;
-
-    enum Status { // status of the bootcamp participant. 
+    
+    // status of the bootcamp participant. 
+    enum Status {
+        Pending, // initial status
         InProgress, // participant passing a bootcamp.
         Withdraw, // praticipant allowed for withdraw.
         Passed, // bootcamp was passed successfully, and deposit will be returned.
@@ -141,30 +143,28 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
      *  - Caller should allow this contract to spend his USDC, before calling this function.
      * 
      * Emits a {DepositDone} event.
-     * 
-     * @param _amount - USDC amount.
-     * @param _depositor - address of the bootcamp participant.
-     */
-    function deposit(uint256 _amount, address _depositor) external whenNotPaused {
-        _notAddressZero(_depositor);
-        uint256 allowance = depositToken.allowance(_depositor, address(this));
+    */
+    function deposit() external whenNotPaused {
+        _notAddressZero(msg.sender);
+        uint256 allowance = depositToken.allowance(msg.sender, address(this));
+        
+        if (deposits[msg.sender].status == Status.InProgress) { // checking if user already did a deposit
+            revert DepositHandler__UserAlreadyDeposited();
+        }
         if (block.timestamp > bootcampStart) { // checking that user can do a deposit only during depositing stage(before bootcamp starts)
             revert  DepositHandler__DepositingStageAlreadyClosed();
         }
-        if (_amount != depositAmount) {
-            revert DepositHandler__IncorrectDepositedAmount(_amount, depositAmount);
-        }
-        if (allowance < _amount) {
+        if (allowance < depositAmount) {
             revert DepositHandler__ApprovedAmountLessThanDeposit(allowance);
         }
         
-        deposits[_depositor].depositedAmount += _amount;
-        deposits[_depositor].status = Status.InProgress; // set status to InProgress once user did a deposit, so that it means user is participating in bootcamp.
-        isParticipant[_depositor] = true;
-        emergencyWithdrawParticipants.push(_depositor);
-        SafeERC20.safeTransferFrom(depositToken, _depositor, address(this), _amount);
+        deposits[msg.sender].depositedAmount += depositAmount;
+        deposits[msg.sender].status = Status.InProgress; // set status to InProgress once user did a deposit, so that it means user is participating in bootcamp.
+        isParticipant[msg.sender] = true;
+        emergencyWithdrawParticipants.push(msg.sender);
+        SafeERC20.safeTransferFrom(depositToken, msg.sender, address(this), depositAmount);
         
-        emit DepositDone(_depositor, _amount);
+        emit DepositDone(msg.sender, depositAmount);
     }
 
     /**
