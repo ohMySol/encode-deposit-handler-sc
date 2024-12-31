@@ -186,7 +186,7 @@ contract DepositHandler is Pausable, AccessControl, IDepositHandlerErrors {
     }
 
     /**
-     * @notice Manager si able to withdraw users deposits back to them if some emergency situation appear.
+     * @notice Manager is able to withdraw users deposits back to them if some emergency situation appear.
      * Everyone who participated in the bootcamp will receive their deposit back in case of emergency.
      * Example of emergency situation:
      *  1. Manager set up incorrect(too long duration).
