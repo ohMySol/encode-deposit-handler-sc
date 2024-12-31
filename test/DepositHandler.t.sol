@@ -178,7 +178,7 @@ contract DepositHandlerTest is Test {
         uint256 aliceBalanceBeforeWithdrawal = depositToken.balanceOf(alice);
         
         vm.startPrank(alice);
-        bootcamp.withdraw(networkConfig.depositAmount, alice); // Alice withdraws the deposit
+        bootcamp.withdraw(); // Alice withdraws the deposit
         
         (uint256 aliceDepositAfterWithdrawal, , DepositHandler.Status status) = bootcamp.deposits(alice);
         uint256 aliceBalanceAfterWithdrawal = depositToken.balanceOf(alice);
@@ -212,9 +212,17 @@ contract DepositHandlerTest is Test {
         vm.expectRevert(IDepositHandlerErrors.DepositHandler__NotAllowedActionWithYourStatus.selector);
 
         vm.startPrank(alice);
-        bootcamp.withdraw(networkConfig.depositAmount, alice);
+        bootcamp.withdraw();
     }
 
+    function test_Withdrawal_Fails_When_Not_Participant_Withdrawing() public {
+        vm.startPrank(charlie);
+
+        //charlie tries to withdraw without not been a participant
+        vm.expectRevert(IDepositHandlerErrors.DepositHandler__CallerNotParticipant.selector);
+
+        bootcamp.withdraw();
+    }
 
     function test_EmergencyWithdraw_Success() public {
         //Alice, Bob, and Charlie deposit the required amount. Which in turn adds them to emergencyWithdrawParticipants
@@ -284,7 +292,7 @@ contract DepositHandlerTest is Test {
         // Try to withdraw and expect revert
         vm.prank(alice);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        bootcamp.withdraw(networkConfig.depositAmount, alice);
+        bootcamp.withdraw();
     }
 
     function test_Withdrawal_Reverts_When_Period_Has_Ended() public {
@@ -306,7 +314,7 @@ contract DepositHandlerTest is Test {
         // Expect revert when Alice tries to withdraw after the period has finished
         vm.prank(alice);
         vm.expectRevert(IDepositHandlerErrors.DepositHandler__WithdrawStageAlreadyClosed.selector);
-        bootcamp.withdraw(networkConfig.depositAmount, alice);
+        bootcamp.withdraw();
     }
 
     /*//////////////////////////////////////////////////
@@ -387,7 +395,7 @@ contract DepositHandlerTest is Test {
         //(uint256 aliceDepositBefore, ,DepositHandler.Status aliceStatusBefore) = bootcamp.deposits(alice);
         
         vm.startPrank(manager);
-        bootcamp.exceptionalWithdraw(networkConfig.depositAmount, alice, DepositHandler.Status.InProgress);
+        bootcamp.exceptionalWithdraw(alice, DepositHandler.Status.InProgress);
 
         // verify that Alice's balance has been updated, her deposit reset to 0
         uint256 aliceBalanceAfter = depositToken.balanceOf(alice);
@@ -411,7 +419,7 @@ contract DepositHandlerTest is Test {
         //(uint256 aliceDepositBefore, ,DepositHandler.Status aliceStatusBefore) = bootcamp.deposits(alice);
         
         vm.startPrank(manager);
-        bootcamp.exceptionalWithdraw(networkConfig.depositAmount, alice, DepositHandler.Status.Passed);
+        bootcamp.exceptionalWithdraw(alice, DepositHandler.Status.Passed);
 
         // verify that Alice's balance has been updated, her deposit reset to 0, and status changed to passed
         uint256 aliceBalanceAfter = depositToken.balanceOf(alice);
@@ -545,7 +553,7 @@ contract DepositHandlerTest is Test {
         vm.stopPrank();
 
         // Assert: Verify donation status
-        (uint256 depositedAmount, bool depositDonation, DepositHandler.Status status) = bootcamp.deposits(alice);
+        (, bool depositDonation,) = bootcamp.deposits(alice);
         assertTrue(depositDonation, "Donation status should be true after successful donation.");
     }
 
